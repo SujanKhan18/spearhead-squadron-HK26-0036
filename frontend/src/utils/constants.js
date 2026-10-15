@@ -27,7 +27,10 @@ export const ROUTES = {
 };
 
 export const APP_NAME = 'SafeSphere';
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const rawApiUrl = import.meta.env.VITE_API_BASE_URL || '';
+export const API_BASE_URL = rawApiUrl
+    ? (rawApiUrl.startsWith('http') ? rawApiUrl : `https://${rawApiUrl}`).replace(/\/$/, '')
+    : '';
 
 export const MOCK_USER = {
     name: 'Anushka Prasad',

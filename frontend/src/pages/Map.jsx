@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Hospital, Navigation, Search, Shield, ShieldAlert, Star, Info, Loader2, ExternalLink, Compass, MapPin, RefreshCw } from 'lucide-react';
 import CustomMapContainer from '../components/Map/MapContainer';
+import { API_BASE_URL } from '../utils/constants';
 
 // Helper for exact distance in km
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -111,7 +112,7 @@ export default function MapPage() {
 
       // Only call backend if we have an auth token; otherwise go straight to local fallback
       if (token) {
-        const response = await fetch(`/api/map/nearby?lat=${lat}&lng=${lon}`, {
+        const response = await fetch(`${API_BASE_URL}/api/map/nearby?lat=${lat}&lng=${lon}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.ok) {
