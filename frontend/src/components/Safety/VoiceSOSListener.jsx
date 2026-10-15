@@ -205,21 +205,21 @@ export default function VoiceSOSListener({ onTriggerVoiceSOS }) {
   };
 
   return (
-    <div className="premium-panel p-6 rounded-3xl border border-[#DCDDD5] bg-white shadow-sm space-y-6">
+    <div className="premium-panel p-6 rounded-3xl border border-[#E2E8F0] bg-white shadow-sm space-y-6">
       {/* Header & Toggle */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#DCDDD5] pb-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FAF0EA] text-[#7A8E72] border border-[#DCDDD5]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0]">
             <Volume2 className="h-6 w-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-headline text-xl font-semibold text-[#28302A]">Voice-Triggered SOS</h3>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FAF0EA] text-[#7A8E72] border border-[#DCDDD5]">
+              <h3 className="font-headline text-xl font-semibold text-[#0F172A]">Voice-Triggered SOS</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0]">
                 Hands-Free Speech AI
               </span>
             </div>
-            <p className="text-xs text-[#687067] mt-0.5">
+            <p className="text-xs text-[#64748B] mt-0.5">
               Continuously pattern-matches distress phrases like "help me now" or "I am not safe".
             </p>
           </div>
@@ -230,7 +230,7 @@ export default function VoiceSOSListener({ onTriggerVoiceSOS }) {
           className={`px-5 py-2.5 rounded-2xl text-xs font-semibold uppercase tracking-wider transition-all shadow-sm flex items-center gap-2 ${
             isListening
               ? 'bg-[#C62828]/15 text-[#C62828] border border-[#C62828]/40 hover:bg-[#C62828]/25 animate-pulse'
-              : 'bg-[#7A8E72] text-white hover:bg-[#66775f]'
+              : 'bg-[#2563EB] text-white hover:bg-[#66775f]'
           }`}
         >
           {isListening ? (
@@ -263,23 +263,23 @@ export default function VoiceSOSListener({ onTriggerVoiceSOS }) {
       {/* Audio Visualizer & Speech Feed Grid */}
       <div className="grid gap-5 md:grid-cols-2">
         {/* Left: Active Phrases & Audio Level */}
-        <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#DCDDD5] space-y-4">
+        <div className="p-5 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0] space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#687067]">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
               Mic Audio Signal Meter
             </span>
-            <span className="font-mono text-xs text-[#7A8E72] font-bold">{audioLevel}%</span>
+            <span className="font-mono text-xs text-[#2563EB] font-bold">{audioLevel}%</span>
           </div>
 
-          <div className="h-2.5 w-full rounded-full bg-[#FAF0EA] overflow-hidden">
+          <div className="h-2.5 w-full rounded-full bg-[#F8FAFC] overflow-hidden">
             <div
-              className="h-full bg-[#7A8E72] transition-all duration-150"
+              className="h-full bg-[#2563EB] transition-all duration-150"
               style={{ width: `${audioLevel}%` }}
             />
           </div>
 
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#687067] mb-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B] mb-2">
               Recognized Trigger Phrases:
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -287,7 +287,7 @@ export default function VoiceSOSListener({ onTriggerVoiceSOS }) {
                 <span
                   key={phrase}
                   onClick={() => simulatePhrase(phrase)}
-                  className="px-2.5 py-1 rounded-xl bg-white border border-[#DCDDD5] text-[11px] font-mono text-[#28302A] hover:border-[#7A8E72] hover:bg-[#FAF0EA] cursor-pointer transition-all"
+                  className="px-2.5 py-1 rounded-xl bg-white border border-[#E2E8F0] text-[11px] font-mono text-[#0F172A] hover:border-[#2563EB] hover:bg-[#F8FAFC] cursor-pointer transition-all"
                 >
                   "{phrase}"
                 </span>
@@ -297,10 +297,10 @@ export default function VoiceSOSListener({ onTriggerVoiceSOS }) {
         </div>
 
         {/* Right: Live Speech Recognizer Feed */}
-        <div className="p-5 rounded-2xl bg-[#FAF8F5] border border-[#DCDDD5] flex flex-col justify-between space-y-4">
+        <div className="p-5 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0] flex flex-col justify-between space-y-4">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#687067]">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
                 Live Speech Recognizer Stream
               </span>
               {isListening && (
@@ -310,26 +310,26 @@ export default function VoiceSOSListener({ onTriggerVoiceSOS }) {
               )}
             </div>
             
-            <div className="p-3.5 rounded-xl bg-white border border-[#DCDDD5] min-h-[60px] flex items-center">
-              <p className="text-xs font-mono text-[#28302A] italic">
+            <div className="p-3.5 rounded-xl bg-white border border-[#E2E8F0] min-h-[60px] flex items-center">
+              <p className="text-xs font-mono text-[#0F172A] italic">
                 {transcript ? `"${transcript}"` : isListening ? 'Listening for speech patterns...' : 'Voice listener idle. Click button to start.'}
               </p>
             </div>
           </div>
 
           {/* Quick Simulation Triggers */}
-          <div className="pt-3 border-t border-[#DCDDD5] flex items-center justify-between gap-2">
-            <span className="text-[10px] text-[#687067] uppercase font-semibold">Demo Simulation:</span>
+          <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between gap-2">
+            <span className="text-[10px] text-[#64748B] uppercase font-semibold">Demo Simulation:</span>
             <div className="flex gap-2">
               <button
                 onClick={() => simulatePhrase('help me now')}
-                className="btn-secondary text-[11px] py-1.5 px-3 border-[#DCDDD5] hover:border-[#7A8E72]"
+                className="btn-secondary text-[11px] py-1.5 px-3 border-[#E2E8F0] hover:border-[#2563EB]"
               >
-                <Sparkles className="h-3 w-3 text-[#7A8E72]" /> "Help me now"
+                <Sparkles className="h-3 w-3 text-[#2563EB]" /> "Help me now"
               </button>
               <button
                 onClick={() => simulatePhrase('i am not safe')}
-                className="btn-secondary text-[11px] py-1.5 px-3 border-[#DCDDD5] hover:border-[#C62828]"
+                className="btn-secondary text-[11px] py-1.5 px-3 border-[#E2E8F0] hover:border-[#C62828]"
               >
                 <Sparkles className="h-3 w-3 text-[#C62828]" /> "I am not safe"
               </button>
@@ -350,10 +350,10 @@ export default function VoiceSOSListener({ onTriggerVoiceSOS }) {
               <span className="px-3 py-1 rounded-full bg-[#C62828]/15 text-[#C62828] border border-[#C62828]/30 text-[10px] font-bold uppercase tracking-widest">
                 Voice Phrase Detected: "{detectedPhrase}"
               </span>
-              <h3 className="font-headline text-3xl font-extrabold text-[#28302A] mt-3">
+              <h3 className="font-headline text-3xl font-extrabold text-[#0F172A] mt-3">
                 DISPATCHING SOS
               </h3>
-              <p className="text-xs text-[#687067] mt-2">
+              <p className="text-xs text-[#64748B] mt-2">
                 Emergency alert will automatically notify guardians and local command centers in:
               </p>
             </div>
@@ -364,7 +364,7 @@ export default function VoiceSOSListener({ onTriggerVoiceSOS }) {
 
             <button
               onClick={handleCancelCountdown}
-              className="w-full py-4 rounded-2xl bg-[#FAF0EA] hover:bg-[#f3e5dc] text-[#28302A] font-bold text-base border border-[#DCDDD5] shadow-md transition-all cursor-pointer"
+              className="w-full py-4 rounded-2xl bg-[#F8FAFC] hover:bg-[#f3e5dc] text-[#0F172A] font-bold text-base border border-[#E2E8F0] shadow-md transition-all cursor-pointer"
             >
               CANCEL ALERT (FALSE TRIGGER)
             </button>

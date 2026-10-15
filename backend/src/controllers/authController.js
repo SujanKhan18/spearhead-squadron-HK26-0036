@@ -1,9 +1,18 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { OAuth2Client } = require('google-auth-library');
-
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+let googleClient = null;
+const getGoogleClient = () => {
+  if (!googleClient && process.env.GOOGLE_CLIENT_ID) {
+    try {
+      const { OAuth2Client } = require('google-auth-library');
+      googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    } catch (err) {
+      console.warn('[AUTH] Could not initialize Google OAuth client:', err.message);
+    }
+  }
+  return googleClient;
+};
 
 // ── Token Generation ─────────────────────────────────────────────────
 const generateAccessToken = (userId) =>
@@ -233,7 +242,12 @@ const googleLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Google token is required' });
     }
 
-    const ticket = await googleClient.verifyIdToken({
+    const client = getGoogleClient();
+    if (!client) {
+      return res.status(500).json({ success: false, message: 'Google authentication not configured on server' });
+    }
+
+    const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });

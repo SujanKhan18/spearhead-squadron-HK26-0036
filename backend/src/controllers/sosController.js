@@ -1,11 +1,15 @@
 const SosAlert = require('../models/SosAlert');
 const Guardian = require('../models/Guardian');
 const { getIO } = require('../config/socket');
-const twilio = require('twilio');
-
-const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
-  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-  : null;
+let twilioClient = null;
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+  try {
+    const twilio = require('twilio');
+    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  } catch (err) {
+    console.warn('[TWILIO] Could not initialize Twilio client:', err.message);
+  }
+}
 
 const sendSMSToGuardian = async (guardian, alertData) => {
   const smsBody = `EMERGENCY ALERT from Safe-Era\n\n${alertData.userName} needs immediate help!\n\nLocation: ${alertData.googleMapsLink}\n\nCall them: ${alertData.userPhone}\n\nThis alert was sent automatically by Safe-Era safety app.`;

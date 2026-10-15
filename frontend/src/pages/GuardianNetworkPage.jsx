@@ -40,11 +40,11 @@ function Toast({ toast, onClose }) {
   if (!toast) return null;
   const isError = toast.type === 'error';
   return (
-    <div className={`fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border px-5 py-3 text-sm shadow-2xl backdrop-blur-xl transition-all ${isError ? 'border-[#C62828]/30 bg-[#C62828] text-white' : 'border-[#DCDDD5] bg-white text-[#28302A]'}`}>
+    <div className={`fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border px-5 py-3 text-sm shadow-2xl backdrop-blur-xl transition-all ${isError ? 'border-[#C62828]/30 bg-[#C62828] text-white' : 'border-[#E2E8F0] bg-white text-[#0F172A]'}`}>
       <span className="inline-flex items-center gap-2">
         {isError
           ? <AlertCircle className="h-4 w-4 text-white" />
-          : <CheckCircle2 className="h-4 w-4 text-[#4F7D55]" />}
+          : <CheckCircle2 className="h-4 w-4 text-[#10B981]" />}
         {toast.message}
         <button onClick={onClose} className="ml-1 opacity-60 hover:opacity-100"><X className="h-3 w-3" /></button>
       </span>
@@ -94,14 +94,14 @@ function OTPModal({ guardian, onClose, onVerified, showToast }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div className="premium-panel-strong w-full max-w-md p-6 bg-white border border-[#DCDDD5] shadow-2xl">
+      <div className="premium-panel-strong w-full max-w-md p-6 bg-white border border-[#E2E8F0] shadow-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-headline text-2xl font-semibold text-[#28302A]">Verify Guardian</h3>
-          <button onClick={onClose} className="text-[#687067] hover:text-[#28302A]"><X className="h-5 w-5" /></button>
+          <h3 className="font-headline text-2xl font-semibold text-[#0F172A]">Verify Guardian</h3>
+          <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A]"><X className="h-5 w-5" /></button>
         </div>
-        <p className="text-sm text-[#687067] mb-6">
-          An OTP was sent to <span className="text-[#7A8E72] font-semibold">{guardian.guardianName}</span>&#39;s number
-          ending in <span className="text-[#28302A] font-mono font-bold">{guardian.guardianPhone?.slice(-4)}</span>.
+        <p className="text-sm text-[#64748B] mb-6">
+          An OTP was sent to <span className="text-[#2563EB] font-semibold">{guardian.guardianName}</span>&#39;s number
+          ending in <span className="text-[#0F172A] font-mono font-bold">{guardian.guardianPhone?.slice(-4)}</span>.
           Ask them to share it with you.
         </p>
         <form onSubmit={handleVerify} className="space-y-4">
@@ -124,7 +124,7 @@ function OTPModal({ guardian, onClose, onVerified, showToast }) {
             type="button"
             onClick={handleResend}
             disabled={resending}
-            className="w-full text-sm text-[#687067] hover:text-[#28302A] flex items-center justify-center gap-2"
+            className="w-full text-sm text-[#64748B] hover:text-[#0F172A] flex items-center justify-center gap-2"
           >
             {resending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
             Resend OTP
@@ -165,14 +165,14 @@ function EditModal({ guardian, onClose, onSaved, showToast }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div className="premium-panel-strong w-full max-w-xl p-6 bg-white border border-[#DCDDD5] shadow-2xl">
+      <div className="premium-panel-strong w-full max-w-xl p-6 bg-white border border-[#E2E8F0] shadow-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-headline text-2xl font-semibold text-[#28302A]">Edit Guardian</h3>
-          <button onClick={onClose} className="text-[#687067] hover:text-[#28302A]"><X className="h-5 w-5" /></button>
+          <h3 className="font-headline text-2xl font-semibold text-[#0F172A]">Edit Guardian</h3>
+          <button onClick={onClose} className="text-[#64748B] hover:text-[#0F172A]"><X className="h-5 w-5" /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-xs text-[#687067] mb-1 block">Name</label>
+            <label className="text-xs text-[#64748B] mb-1 block">Name</label>
             <input
               className="premium-input"
               value={form.guardianName}
@@ -180,11 +180,11 @@ function EditModal({ guardian, onClose, onSaved, showToast }) {
             />
           </div>
           <div>
-            <label className="text-xs text-[#687067] mb-1 block">Phone (cannot be changed)</label>
-            <input className="premium-input opacity-60 cursor-not-allowed bg-[#FAF8F5]" value={guardian.guardianPhone} readOnly />
+            <label className="text-xs text-[#64748B] mb-1 block">Phone (cannot be changed)</label>
+            <input className="premium-input opacity-60 cursor-not-allowed bg-[#F1F5F9]" value={guardian.guardianPhone} readOnly />
           </div>
           <div>
-            <label className="text-xs text-[#687067] mb-1 block">Relationship</label>
+            <label className="text-xs text-[#64748B] mb-1 block">Relationship</label>
             <select
               className="premium-select"
               value={form.relation}
@@ -196,7 +196,7 @@ function EditModal({ guardian, onClose, onSaved, showToast }) {
             </select>
           </div>
           <div>
-            <label className="text-xs text-[#687067] mb-1 block">Notes (optional)</label>
+            <label className="text-xs text-[#64748B] mb-1 block">Notes (optional)</label>
             <input
               className="premium-input"
               placeholder="Add a note…"
@@ -249,25 +249,25 @@ function GuardianCard({ guardian, onEdit, onRemove, onVerify, showToast }) {
   };
 
   return (
-    <div className="premium-panel p-5 bg-white border border-[#DCDDD5] shadow-sm">
+    <div className="premium-panel p-5 bg-white border border-[#E2E8F0] shadow-sm">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
-          <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FAF0EA] text-[#7A8E72] border border-[#DCDDD5] font-semibold text-lg flex-shrink-0">
+          <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0] font-semibold text-lg flex-shrink-0">
             {guardian.guardianName.charAt(0).toUpperCase()}
             {guardian.isVerified && (
-              <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#4F7D55] ring-2 ring-white">
+              <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#10B981] ring-2 ring-white">
                 <ShieldCheck className="h-3 w-3 text-white" />
               </span>
             )}
           </div>
           <div>
-            <p className="font-semibold text-[#28302A]">{guardian.guardianName}</p>
-            <p className="text-sm text-[#687067]">
+            <p className="font-semibold text-[#0F172A]">{guardian.guardianName}</p>
+            <p className="text-sm text-[#64748B]">
               +91 {guardian.guardianPhone} · {guardian.relation}
             </p>
             <div className="flex items-center gap-2 mt-1">
               {guardian.isVerified ? (
-                <span className="inline-flex items-center gap-1 text-xs text-[#4F7D55] font-medium">
+                <span className="inline-flex items-center gap-1 text-xs text-[#10B981] font-medium">
                   <ShieldCheck className="h-3 w-3" /> Verified
                 </span>
               ) : (
@@ -275,7 +275,7 @@ function GuardianCard({ guardian, onEdit, onRemove, onVerify, showToast }) {
                   <Clock className="h-3 w-3" /> Pending verification
                 </span>
               )}
-              <span className="text-xs text-[#B8A99A]">· Last alert: {formatLastAlert(guardian.lastAlertedAt)}</span>
+              <span className="text-xs text-[#94A3B8]">· Last alert: {formatLastAlert(guardian.lastAlertedAt)}</span>
             </div>
           </div>
         </div>
@@ -284,7 +284,7 @@ function GuardianCard({ guardian, onEdit, onRemove, onVerify, showToast }) {
           {!guardian.isVerified && (
             <button
               onClick={() => onVerify(guardian)}
-              className="text-sm font-semibold text-[#7A8E72] hover:text-[#5e6e58] border border-[#7A8E72]/40 bg-[#FAF0EA] rounded-xl px-3 py-1.5 hover:bg-[#f3e5dc] transition-colors"
+              className="text-sm font-semibold text-[#2563EB] hover:text-[#5e6e58] border border-[#2563EB]/40 bg-[#F8FAFC] rounded-xl px-3 py-1.5 hover:bg-[#f3e5dc] transition-colors"
             >
               Enter OTP
             </button>
@@ -293,15 +293,15 @@ function GuardianCard({ guardian, onEdit, onRemove, onVerify, showToast }) {
             <button
               onClick={handleTestAlert}
               disabled={testing}
-              className="text-sm font-semibold text-[#687067] hover:text-[#28302A] border border-[#DCDDD5] rounded-xl px-3 py-1.5 hover:bg-[#FAF8F5] transition-colors disabled:opacity-50 flex items-center gap-1"
+              className="text-sm font-semibold text-[#64748B] hover:text-[#0F172A] border border-[#E2E8F0] rounded-xl px-3 py-1.5 hover:bg-[#F1F5F9] transition-colors disabled:opacity-50 flex items-center gap-1"
             >
-              {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3 text-[#7A8E72]" />}
+              {testing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3 text-[#2563EB]" />}
               Test alert
             </button>
           )}
           <button
             onClick={() => onEdit(guardian)}
-            className="rounded-2xl border border-[#DCDDD5] bg-white p-2.5 text-[#687067] hover:text-[#28302A] hover:bg-[#FAF8F5] transition-colors shadow-sm"
+            className="rounded-2xl border border-[#E2E8F0] bg-white p-2.5 text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-colors shadow-sm"
             title="Edit"
           >
             <Edit3 className="h-4 w-4" />
@@ -429,16 +429,16 @@ export default function GuardianNetworkPage() {
       {/* Header */}
       <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#7A8E72]">Guardian network</p>
-          <h1 className="mt-3 font-headline text-4xl font-semibold text-[#28302A] md:text-5xl">Trusted circle management</h1>
-          <p className="mt-3 text-[#687067]">Manage the people who receive your safety updates and emergency alerts.</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#2563EB]">Guardian network</p>
+          <h1 className="mt-3 font-headline text-4xl font-semibold text-[#0F172A] md:text-5xl">Trusted circle management</h1>
+          <p className="mt-3 text-[#64748B]">Manage the people who receive your safety updates and emergency alerts.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="premium-chip w-fit bg-white border border-[#DCDDD5] text-[#28302A]">Slots: {guardians.length} / {MAX_GUARDIANS}</div>
+          <div className="premium-chip w-fit bg-white border border-[#E2E8F0] text-[#0F172A]">Slots: {guardians.length} / {MAX_GUARDIANS}</div>
           <button
             onClick={fetchGuardians}
             disabled={loadingGuardians}
-            className="rounded-xl border border-[#DCDDD5] bg-white p-2 text-[#687067] hover:text-[#28302A] hover:bg-[#FAF8F5] disabled:opacity-50 shadow-sm"
+            className="rounded-xl border border-[#E2E8F0] bg-white p-2 text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] disabled:opacity-50 shadow-sm"
             title="Refresh"
           >
             <RefreshCw className={`h-4 w-4 ${loadingGuardians ? 'animate-spin' : ''}`} />
@@ -448,10 +448,10 @@ export default function GuardianNetworkPage() {
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         {/* Add Guardian Form */}
-        <div className="premium-panel-strong p-6 h-fit bg-white border border-[#DCDDD5] shadow-sm">
+        <div className="premium-panel-strong p-6 h-fit bg-white border border-[#E2E8F0] shadow-sm">
           <div className="mb-5 flex items-center gap-3">
-            <UserPlus className="h-5 w-5 text-[#7A8E72]" />
-            <h2 className="font-headline text-2xl font-semibold text-[#28302A]">Add new guardian</h2>
+            <UserPlus className="h-5 w-5 text-[#2563EB]" />
+            <h2 className="font-headline text-2xl font-semibold text-[#0F172A]">Add new guardian</h2>
           </div>
 
           {isLimitReached ? (
@@ -461,7 +461,7 @@ export default function GuardianNetworkPage() {
           ) : (
             <form onSubmit={handleAdd} className="space-y-4">
               <div>
-                <label className="text-xs text-[#687067] mb-1 block">Full name</label>
+                <label className="text-xs text-[#64748B] mb-1 block">Full name</label>
                 <input
                   className="premium-input"
                   placeholder="Guardian's full name"
@@ -471,7 +471,7 @@ export default function GuardianNetworkPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-[#687067] mb-1 block">Phone number (10 digits, no country code)</label>
+                <label className="text-xs text-[#64748B] mb-1 block">Phone number (10 digits, no country code)</label>
                 <input
                   className="premium-input"
                   placeholder="9876543210"
@@ -482,7 +482,7 @@ export default function GuardianNetworkPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-[#687067] mb-1 block">Relationship</label>
+                <label className="text-xs text-[#64748B] mb-1 block">Relationship</label>
                 <select
                   className="premium-select"
                   value={formData.relation}
@@ -504,8 +504,8 @@ export default function GuardianNetworkPage() {
             </form>
           )}
 
-          <div className="mt-6 rounded-2xl border border-[#A8B8A0]/30 bg-[#A8B8A0]/10 p-4 text-xs text-[#28302A] space-y-1">
-            <p className="font-semibold text-[#28302A] flex items-center gap-1"><Shield className="h-3 w-3 text-[#7A8E72]" /> How it works</p>
+          <div className="mt-6 rounded-2xl border border-[#3B82F6]/30 bg-[#3B82F6]/10 p-4 text-xs text-[#0F172A] space-y-1">
+            <p className="font-semibold text-[#0F172A] flex items-center gap-1"><Shield className="h-3 w-3 text-[#2563EB]" /> How it works</p>
             <p>1. Add guardian&#39;s phone number</p>
             <p>2. An OTP is sent to their phone via SMS</p>
             <p>3. They share the OTP with you to verify</p>
@@ -516,8 +516,8 @@ export default function GuardianNetworkPage() {
         {/* Guardian List */}
         <div className="space-y-4">
           {loadingGuardians ? (
-            <div className="flex flex-col items-center justify-center py-20 text-[#687067] gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-[#7A8E72]" />
+            <div className="flex flex-col items-center justify-center py-20 text-[#64748B] gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-[#2563EB]" />
               <p>Loading your guardians…</p>
             </div>
           ) : loadError ? (
@@ -528,9 +528,9 @@ export default function GuardianNetworkPage() {
               <button onClick={fetchGuardians} className="mt-4 btn-secondary">Try again</button>
             </div>
           ) : guardians.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-[#687067] gap-3 premium-panel bg-white border border-[#DCDDD5]">
-              <UserPlus className="h-12 w-12 text-[#B8A99A]" />
-              <p className="text-lg font-semibold text-[#28302A]">No guardians yet</p>
+            <div className="flex flex-col items-center justify-center py-20 text-[#64748B] gap-3 premium-panel bg-white border border-[#E2E8F0]">
+              <UserPlus className="h-12 w-12 text-[#94A3B8]" />
+              <p className="text-lg font-semibold text-[#0F172A]">No guardians yet</p>
               <p className="text-sm text-center">Add your first trusted contact using the form on the left.</p>
             </div>
           ) : (
@@ -538,7 +538,7 @@ export default function GuardianNetworkPage() {
               {/* Verified section */}
               {guardians.filter(g => g.isVerified).length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-[#4F7D55] mb-3 flex items-center gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-[#10B981] mb-3 flex items-center gap-2">
                     <ShieldCheck className="h-3 w-3" /> Verified ({guardians.filter(g => g.isVerified).length})
                   </p>
                   <div className="space-y-3">

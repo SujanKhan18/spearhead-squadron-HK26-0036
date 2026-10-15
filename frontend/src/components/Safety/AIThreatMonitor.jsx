@@ -228,21 +228,21 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
   };
 
   return (
-    <div className="premium-panel p-6 rounded-3xl border border-[#DCDDD5] bg-white shadow-sm space-y-6">
+    <div className="premium-panel p-6 rounded-3xl border border-[#E2E8F0] bg-white shadow-sm space-y-6">
       {/* Header & Toggle */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#DCDDD5] pb-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FAF0EA] text-[#7A8E72] border border-[#DCDDD5]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0]">
             <Activity className="h-6 w-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-headline text-xl font-semibold text-[#28302A]">AI Threat Monitor</h3>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FAF0EA] text-[#7A8E72] border border-[#DCDDD5]">
+              <h3 className="font-headline text-xl font-semibold text-[#0F172A]">AI Threat Monitor</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0]">
                 Multi-Signal AI
               </span>
             </div>
-            <p className="text-xs text-[#687067] mt-0.5">
+            <p className="text-xs text-[#64748B] mt-0.5">
               Silent background safety engine watching Motion, Audio & GPS signals.
             </p>
           </div>
@@ -252,8 +252,8 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
           onClick={isEnabled ? () => setIsEnabled(false) : requestSensorsPermission}
           className={`px-5 py-2.5 rounded-2xl text-xs font-semibold uppercase tracking-wider transition-all shadow-sm ${
             isEnabled
-              ? 'bg-[#4F7D55]/15 text-[#4F7D55] border border-[#4F7D55]/30 hover:bg-[#4F7D55]/25'
-              : 'bg-[#7A8E72] text-white hover:bg-[#66775f]'
+              ? 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 hover:bg-[#10B981]/25'
+              : 'bg-[#2563EB] text-white hover:bg-[#66775f]'
           }`}
         >
           {isEnabled ? '● Safety Mode Active' : 'Enable Safety Mode'}
@@ -270,14 +270,14 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
       {/* Main Threat Score & Gauge */}
       <div className="grid gap-6 md:grid-cols-[1fr_1.2fr] items-center">
         {/* Circular Gauge */}
-        <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[#FAF8F5] border border-[#DCDDD5] text-center relative overflow-hidden">
+        <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0] text-center relative overflow-hidden">
           <div className="relative flex items-center justify-center w-36 h-36">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
               <circle
                 cx="50"
                 cy="50"
                 r="40"
-                className="stroke-[#FAF0EA]"
+                className="stroke-[#F8FAFC]"
                 strokeWidth="8"
                 fill="transparent"
               />
@@ -290,7 +290,7 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
                     ? 'stroke-[#C62828]'
                     : threatLevel === 'MEDIUM'
                     ? 'stroke-[#C18A32]'
-                    : 'stroke-[#4F7D55]'
+                    : 'stroke-[#10B981]'
                 }`}
                 strokeWidth="8"
                 strokeDasharray={251.2}
@@ -300,10 +300,10 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-extrabold font-mono text-[#28302A] tracking-tight">
+              <span className="text-3xl font-extrabold font-mono text-[#0F172A] tracking-tight">
                 {overallThreatScore}
               </span>
-              <span className="text-[10px] uppercase tracking-widest font-semibold text-[#687067]">
+              <span className="text-[10px] uppercase tracking-widest font-semibold text-[#64748B]">
                 Threat Score
               </span>
             </div>
@@ -316,7 +316,7 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
                   ? 'bg-[#C62828]/15 text-[#C62828] border border-[#C62828]/30 animate-pulse'
                   : threatLevel === 'MEDIUM'
                   ? 'bg-[#C18A32]/15 text-[#C18A32] border border-[#C18A32]/30'
-                  : 'bg-[#4F7D55]/15 text-[#4F7D55] border border-[#4F7D55]/30'
+                  : 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30'
               }`}
             >
               {threatLevel} RISK LEVEL
@@ -329,14 +329,14 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
           {/* Signal 1: Motion */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="inline-flex items-center gap-2 text-[#28302A]">
-                <Zap className="h-3.5 w-3.5 text-[#7A8E72]" /> Motion Accelerometer
+              <span className="inline-flex items-center gap-2 text-[#0F172A]">
+                <Zap className="h-3.5 w-3.5 text-[#2563EB]" /> Motion Accelerometer
               </span>
-              <span className="font-mono text-[#687067]">{motionScore}%</span>
+              <span className="font-mono text-[#64748B]">{motionScore}%</span>
             </div>
-            <div className="h-2 w-full rounded-full bg-[#FAF0EA] overflow-hidden">
+            <div className="h-2 w-full rounded-full bg-[#F8FAFC] overflow-hidden">
               <div
-                className="h-full bg-[#7A8E72] transition-all duration-300"
+                className="h-full bg-[#2563EB] transition-all duration-300"
                 style={{ width: `${motionScore}%` }}
               />
             </div>
@@ -345,14 +345,14 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
           {/* Signal 2: Audio */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="inline-flex items-center gap-2 text-[#28302A]">
-                <Mic className="h-3.5 w-3.5 text-[#A8B8A0]" /> Audio Distress dB
+              <span className="inline-flex items-center gap-2 text-[#0F172A]">
+                <Mic className="h-3.5 w-3.5 text-[#3B82F6]" /> Audio Distress dB
               </span>
-              <span className="font-mono text-[#687067]">{audioScore}%</span>
+              <span className="font-mono text-[#64748B]">{audioScore}%</span>
             </div>
-            <div className="h-2 w-full rounded-full bg-[#FAF0EA] overflow-hidden">
+            <div className="h-2 w-full rounded-full bg-[#F8FAFC] overflow-hidden">
               <div
-                className="h-full bg-[#A8B8A0] transition-all duration-300"
+                className="h-full bg-[#3B82F6] transition-all duration-300"
                 style={{ width: `${audioScore}%` }}
               />
             </div>
@@ -361,14 +361,14 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
           {/* Signal 3: GPS */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="inline-flex items-center gap-2 text-[#28302A]">
-                <MapPin className="h-3.5 w-3.5 text-[#4F7D55]" /> GPS Route Confidence
+              <span className="inline-flex items-center gap-2 text-[#0F172A]">
+                <MapPin className="h-3.5 w-3.5 text-[#10B981]" /> GPS Route Confidence
               </span>
-              <span className="font-mono text-[#687067]">{gpsScore}%</span>
+              <span className="font-mono text-[#64748B]">{gpsScore}%</span>
             </div>
-            <div className="h-2 w-full rounded-full bg-[#FAF0EA] overflow-hidden">
+            <div className="h-2 w-full rounded-full bg-[#F8FAFC] overflow-hidden">
               <div
-                className="h-full bg-[#4F7D55] transition-all duration-300"
+                className="h-full bg-[#10B981] transition-all duration-300"
                 style={{ width: `${gpsScore}%` }}
               />
             </div>
@@ -377,31 +377,31 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
       </div>
 
       {/* Live Simulation Controls for Demo */}
-      <div className="pt-4 border-t border-[#DCDDD5]">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-[#687067] mb-3">
+      <div className="pt-4 border-t border-[#E2E8F0]">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B] mb-3">
           Interactive Demo Simulation Triggers
         </p>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={simulateJolt}
             disabled={!isEnabled}
-            className="btn-secondary text-xs py-2 px-3 border-[#DCDDD5] hover:border-[#7A8E72]"
+            className="btn-secondary text-xs py-2 px-3 border-[#E2E8F0] hover:border-[#2563EB]"
           >
-            <Zap className="h-3.5 w-3.5 text-[#7A8E72]" /> Violent Jolt (+60)
+            <Zap className="h-3.5 w-3.5 text-[#2563EB]" /> Violent Jolt (+60)
           </button>
           <button
             onClick={simulateScream}
             disabled={!isEnabled}
-            className="btn-secondary text-xs py-2 px-3 border-[#DCDDD5] hover:border-[#A8B8A0]"
+            className="btn-secondary text-xs py-2 px-3 border-[#E2E8F0] hover:border-[#3B82F6]"
           >
-            <Mic className="h-3.5 w-3.5 text-[#A8B8A0]" /> Audio Scream (+70)
+            <Mic className="h-3.5 w-3.5 text-[#3B82F6]" /> Audio Scream (+70)
           </button>
           <button
             onClick={simulateGpsDev}
             disabled={!isEnabled}
-            className="btn-secondary text-xs py-2 px-3 border-[#DCDDD5] hover:border-[#4F7D55]"
+            className="btn-secondary text-xs py-2 px-3 border-[#E2E8F0] hover:border-[#10B981]"
           >
-            <MapPin className="h-3.5 w-3.5 text-[#4F7D55]" /> GPS Detour (+65)
+            <MapPin className="h-3.5 w-3.5 text-[#10B981]" /> GPS Detour (+65)
           </button>
           <button
             onClick={resetBaseline}
@@ -421,22 +421,22 @@ export default function AIThreatMonitor({ onTriggerAutoSOS, activeIncident }) {
             </div>
 
             <div>
-              <h3 className="font-headline text-2xl font-bold text-[#28302A]">Soft Safety Check-In</h3>
-              <p className="text-sm text-[#687067] mt-2">
+              <h3 className="font-headline text-2xl font-bold text-[#0F172A]">Soft Safety Check-In</h3>
+              <p className="text-sm text-[#64748B] mt-2">
                 Unusual motion or audio spike detected (Threat Score: {overallThreatScore}). Are you safe?
               </p>
             </div>
 
             <div className="flex flex-col items-center">
               <div className="text-4xl font-mono font-bold text-[#C18A32]">{checkInCountdown}s</div>
-              <p className="text-xs text-[#687067] mt-1">
+              <p className="text-xs text-[#64748B] mt-1">
                 If no response, alert escalates automatically to emergency contacts.
               </p>
             </div>
 
             <button
               onClick={handleDismissCheckIn}
-              className="w-full py-4 rounded-2xl bg-[#4F7D55] hover:bg-[#436b48] text-white font-bold text-base shadow-md"
+              className="w-full py-4 rounded-2xl bg-[#10B981] hover:bg-[#436b48] text-white font-bold text-base shadow-md"
             >
               I'M FINE - DISMISS ALERT
             </button>

@@ -9,8 +9,8 @@ export default function AppDownloadSection() {
                         <span className="material-symbols-outlined text-sm">phone_iphone</span>
                         Mobile-ready experience
                     </div>
-                    <h2 className="font-headline text-3xl font-semibold text-[#28302A] md:text-5xl">Built to feel native on mobile</h2>
-                    <p className="max-w-xl text-[#687067]">
+                    <h2 className="font-headline text-3xl font-semibold text-[#0F172A] md:text-5xl">Built to feel native on mobile</h2>
+                    <p className="max-w-xl text-[#64748B]">
                         The app now uses a denser dock, floating actions, better spacing, and stronger visual separation for small screens.
                     </p>
                     <div className="flex flex-wrap gap-3">
@@ -20,23 +20,23 @@ export default function AppDownloadSection() {
                 </div>
 
                 <div className="premium-panel-strong mx-auto w-full max-w-sm p-4">
-                    <div className="rounded-[22px] border border-[#DCDDD5] bg-[#FAF8F5] p-4">
+                    <div className="rounded-[22px] border border-[#E2E8F0] bg-[#F1F5F9] p-4">
                         <div className="mb-4 flex items-center justify-between">
-                            <span className="text-sm font-semibold text-[#28302A]">Safe-Era mobile preview</span>
+                            <span className="text-sm font-semibold text-[#0F172A]">Safe-Era mobile preview</span>
                             <span className="premium-chip">Live</span>
                         </div>
-                        <div className="rounded-[20px] border border-[#DCDDD5] bg-white p-6 shadow-sm">
+                        <div className="rounded-[20px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#687067]">Safety status</p>
-                                    <p className="mt-2 text-xl font-semibold text-[#28302A]">Connected & monitoring</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#64748B]">Safety status</p>
+                                    <p className="mt-2 text-xl font-semibold text-[#0F172A]">Connected & monitoring</p>
                                 </div>
                                 <div className="h-14 w-14 rounded-2xl bg-[#C62828] text-white flex items-center justify-center font-semibold shadow-sm">SOS</div>
                             </div>
                             <div className="mt-6 grid grid-cols-3 gap-3">
-                                <div className="rounded-2xl bg-[#FAF0EA] border border-[#DCDDD5] p-3 text-center text-xs text-[#28302A]">Map</div>
-                                <div className="rounded-2xl bg-[#FAF0EA] border border-[#DCDDD5] p-3 text-center text-xs text-[#28302A]">Guardians</div>
-                                <div className="rounded-2xl bg-[#FAF0EA] border border-[#DCDDD5] p-3 text-center text-xs text-[#28302A]">Alerts</div>
+                                <div className="rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] p-3 text-center text-xs text-[#0F172A]">Map</div>
+                                <div className="rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] p-3 text-center text-xs text-[#0F172A]">Guardians</div>
+                                <div className="rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] p-3 text-center text-xs text-[#0F172A]">Alerts</div>
                             </div>
                         </div>
                     </div>

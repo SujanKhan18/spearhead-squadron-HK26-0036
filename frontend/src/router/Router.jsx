@@ -4,10 +4,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 
 // Layouts
-import Navbar from '../components/Layout/Navbar';
-import MobileBottomNav from '../components/Layout/MobileBottomNav';
+import AppLayout from '../components/Layout/AppLayout';
 
-// Pages - Direct imports for debugging
+// Pages
 import Landing from '../pages/Landing';
 import Login from '../pages/Login';
 import Signup from '../pages/Signup';
@@ -21,23 +20,12 @@ import Settings from '../pages/SettingsPage';
 import ICCCDashboard from '../pages/ICCCDashboard';
 import NotFound from '../pages/NotFound';
 
-// Global Layout wrapper
-const StandardLayout = ({ children }) => (
-    <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 flex flex-col pt-20 pb-24 md:pb-0">
-            {children}
-        </main>
-        <MobileBottomNav />
-    </div>
-);
-
 const PageTransition = ({ children }) => (
     <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         className="h-full"
     >
         {children}
@@ -49,7 +37,7 @@ const PrivateRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
 
     if (loading) return (
-        <div className="h-screen w-full flex items-center justify-center bg-background text-primary font-headline italic animate-pulse text-2xl">
+        <div className="h-screen w-full flex items-center justify-center bg-slate-50 text-blue-600 font-headline italic animate-pulse text-2xl">
             Safeguarding...
         </div>
     );
@@ -71,20 +59,23 @@ function AppRoutes() {
     return (
         <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
-                <Route path="/" element={<StandardLayout><PageTransition><Landing /></PageTransition></StandardLayout>} />
+                {/* Public Landing & Auth (Now using modern Sidebar AppLayout) */}
+                <Route path="/" element={<AppLayout><PageTransition><Landing /></PageTransition></AppLayout>} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
-                <Route path="/dashboard" element={<PrivateRoute><StandardLayout><PageTransition><Dashboard /></PageTransition></StandardLayout></PrivateRoute>} />
-                <Route path="/sos" element={<PrivateRoute><StandardLayout><PageTransition><SOS /></PageTransition></StandardLayout></PrivateRoute>} />
-                <Route path="/map" element={<PrivateRoute><StandardLayout><PageTransition><Map /></PageTransition></StandardLayout></PrivateRoute>} />
-                <Route path="/guardians" element={<PrivateRoute><StandardLayout><PageTransition><GuardianNetwork /></PageTransition></StandardLayout></PrivateRoute>} />
-                <Route path="/wellness" element={<PrivateRoute><StandardLayout><PageTransition><Wellness /></PageTransition></StandardLayout></PrivateRoute>} />
-                <Route path="/current-affairs" element={<PrivateRoute><StandardLayout><PageTransition><News /></PageTransition></StandardLayout></PrivateRoute>} />
-                <Route path="/settings" element={<PrivateRoute><StandardLayout><PageTransition><Settings /></PageTransition></StandardLayout></PrivateRoute>} />
-                <Route path="/iccc" element={<PrivateRoute><StandardLayout><PageTransition><ICCCDashboard /></PageTransition></StandardLayout></PrivateRoute>} />
+                {/* Protected Application Pages with Sidebar Layout */}
+                <Route path="/dashboard" element={<PrivateRoute><AppLayout><PageTransition><Dashboard /></PageTransition></AppLayout></PrivateRoute>} />
+                <Route path="/sos" element={<PrivateRoute><AppLayout><PageTransition><SOS /></PageTransition></AppLayout></PrivateRoute>} />
+                <Route path="/map" element={<PrivateRoute><AppLayout><PageTransition><Map /></PageTransition></AppLayout></PrivateRoute>} />
+                <Route path="/guardians" element={<PrivateRoute><AppLayout><PageTransition><GuardianNetwork /></PageTransition></AppLayout></PrivateRoute>} />
+                <Route path="/wellness" element={<PrivateRoute><AppLayout><PageTransition><Wellness /></PageTransition></AppLayout></PrivateRoute>} />
+                <Route path="/current-affairs" element={<PrivateRoute><AppLayout><PageTransition><News /></PageTransition></AppLayout></PrivateRoute>} />
+                <Route path="/settings" element={<PrivateRoute><AppLayout><PageTransition><Settings /></PageTransition></AppLayout></PrivateRoute>} />
+                <Route path="/iccc" element={<PrivateRoute><AppLayout><PageTransition><ICCCDashboard /></PageTransition></AppLayout></PrivateRoute>} />
 
-                <Route path="*" element={<StandardLayout><PageTransition><NotFound /></PageTransition></StandardLayout>} />
+                {/* 404 Fallback */}
+                <Route path="*" element={<AppLayout><PageTransition><NotFound /></PageTransition></AppLayout>} />
             </Routes>
         </AnimatePresence>
     );

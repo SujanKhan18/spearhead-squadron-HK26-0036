@@ -260,9 +260,9 @@ export default function MapPage() {
     <div className="page-shell min-h-screen pt-20">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed left-1/2 top-24 z-[2000] -translate-x-1/2 rounded-full border border-[#DCDDD5] bg-white px-6 py-3 text-sm text-[#28302A] shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4">
+        <div className="fixed left-1/2 top-24 z-[2000] -translate-x-1/2 rounded-full border border-[#E2E8F0] bg-white px-6 py-3 text-sm text-[#0F172A] shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4">
           <span className="inline-flex items-center gap-2 font-medium">
-            <Info className="h-4 w-4 text-[#7A8E72]" />
+            <Info className="h-4 w-4 text-[#2563EB]" />
             {toastMessage}
           </span>
         </div>
@@ -270,24 +270,24 @@ export default function MapPage() {
 
       <div className="mx-auto grid h-[calc(100vh-5.5rem)] max-w-7xl gap-5 px-4 pb-4 sm:px-6 lg:grid-cols-[420px_1fr] lg:px-8">
         {/* Left Sidebar */}
-        <aside className="premium-panel-strong flex min-h-0 flex-col overflow-hidden rounded-[24px] border border-[#DCDDD5] bg-white shadow-sm">
-          <div className="border-b border-[#DCDDD5] p-5">
+        <aside className="premium-panel-strong flex min-h-0 flex-col overflow-hidden rounded-[24px] border border-[#E2E8F0] bg-white shadow-sm">
+          <div className="border-b border-[#E2E8F0] p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[#7A8E72]">Live Safety Map</p>
-                <h1 className="mt-1 font-headline text-2xl font-bold text-[#28302A]">Safe Places Nearby</h1>
-                <p className="mt-1 text-xs text-[#687067] font-medium truncate max-w-[280px]" title={locationName}>
+                <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[#2563EB]">Live Safety Map</p>
+                <h1 className="mt-1 font-headline text-2xl font-bold text-[#0F172A]">Safe Places Nearby</h1>
+                <p className="mt-1 text-xs text-[#64748B] font-medium truncate max-w-[280px]" title={locationName}>
                   📍 {locationName}
                 </p>
               </div>
               <button
                 onClick={handleRenderLiveLocation}
                 disabled={isLoadingGeo}
-                className="rounded-2xl border border-[#DCDDD5] bg-[#FAF0EA] p-3 text-[#7A8E72] transition hover:bg-[#f3e5dc] hover:scale-105 active:scale-95 disabled:opacity-50 shadow-sm"
+                className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-[#2563EB] transition hover:bg-[#f3e5dc] hover:scale-105 active:scale-95 disabled:opacity-50 shadow-sm"
                 aria-label="Re-render location"
                 title="Click to Render My Current Location"
               >
-                {isLoadingGeo ? <Loader2 className="h-5 w-5 animate-spin text-[#7A8E72]" /> : <Navigation className="h-5 w-5 text-[#7A8E72]" />}
+                {isLoadingGeo ? <Loader2 className="h-5 w-5 animate-spin text-[#2563EB]" /> : <Navigation className="h-5 w-5 text-[#2563EB]" />}
               </button>
             </div>
 
@@ -295,7 +295,7 @@ export default function MapPage() {
             <button
               onClick={handleRenderLiveLocation}
               disabled={isLoadingGeo}
-              className="mt-4 w-full py-3.5 px-4 rounded-2xl bg-[#7A8E72] hover:bg-[#66775f] text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-md active:scale-[0.98] transition"
+              className="mt-4 w-full py-3.5 px-4 rounded-2xl bg-[#2563EB] hover:bg-[#66775f] text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-md active:scale-[0.98] transition"
             >
               {isLoadingGeo ? (
                 <>
@@ -305,8 +305,8 @@ export default function MapPage() {
               ) : (
                 <>
                   <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#E8C4B8] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#E8C4B8]"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#DBEAFE] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#DBEAFE]"></span>
                   </span>
                   <span>📍 Click to Render Live Location</span>
                 </>
@@ -315,20 +315,20 @@ export default function MapPage() {
 
             {/* Search Form */}
             <form onSubmit={handleSearchSubmit} className="mt-3.5 flex gap-2">
-              <div className="relative flex-1 rounded-2xl border border-[#DCDDD5] bg-[#FAF8F5] px-3 py-2.5 flex items-center">
-                <Search className="h-4 w-4 text-[#687067] mr-2 flex-shrink-0" />
+              <div className="relative flex-1 rounded-2xl border border-[#E2E8F0] bg-[#F1F5F9] px-3 py-2.5 flex items-center">
+                <Search className="h-4 w-4 text-[#64748B] mr-2 flex-shrink-0" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search city, area, or police station..."
-                  className="w-full bg-transparent text-sm text-[#28302A] placeholder:text-[#B8A99A] focus:outline-none"
+                  className="w-full bg-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isSearching}
-                className="px-4 py-2.5 rounded-2xl bg-[#7A8E72] hover:bg-[#66775f] text-white text-xs font-semibold tracking-wider transition disabled:opacity-50 flex items-center justify-center shadow-sm"
+                className="px-4 py-2.5 rounded-2xl bg-[#2563EB] hover:bg-[#66775f] text-white text-xs font-semibold tracking-wider transition disabled:opacity-50 flex items-center justify-center shadow-sm"
               >
                 {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
               </button>
@@ -345,8 +345,8 @@ export default function MapPage() {
                     onClick={() => setActiveFilter(filter.label)}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap ${
                       active
-                        ? 'bg-[#7A8E72] text-white shadow-sm'
-                        : 'bg-[#FAF0EA] text-[#687067] hover:bg-[#f3e5dc] hover:text-[#28302A]'
+                        ? 'bg-[#2563EB] text-white shadow-sm'
+                        : 'bg-[#F8FAFC] text-[#64748B] hover:bg-[#f3e5dc] hover:text-[#0F172A]'
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -360,21 +360,21 @@ export default function MapPage() {
           {/* POI List */}
           <div className="min-h-0 flex-1 overflow-y-auto p-4 space-y-3">
             <div className="flex items-center justify-between px-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#687067]">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#64748B]">
                 {filteredPois.length} Safe Places Found
               </p>
               {isLoadingGeo && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#7A8E72]">
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2563EB]">
                   <Loader2 className="h-3 w-3 animate-spin" /> Locating...
                 </span>
               )}
             </div>
 
             {filteredPois.length === 0 ? (
-              <div className="rounded-2xl border border-[#DCDDD5] bg-[#FAF8F5] p-8 text-center text-[#687067]">
-                <Shield className="h-8 w-8 mx-auto mb-2 text-[#B8A99A]" />
-                <p className="font-semibold text-[#28302A]">No safe places found</p>
-                <p className="text-xs text-[#687067] mt-1">Try resetting the filter or clicking Render Live Location.</p>
+              <div className="rounded-2xl border border-[#E2E8F0] bg-[#F1F5F9] p-8 text-center text-[#64748B]">
+                <Shield className="h-8 w-8 mx-auto mb-2 text-[#94A3B8]" />
+                <p className="font-semibold text-[#0F172A]">No safe places found</p>
+                <p className="text-xs text-[#64748B] mt-1">Try resetting the filter or clicking Render Live Location.</p>
               </div>
             ) : (
               filteredPois.map((place) => {
@@ -391,22 +391,22 @@ export default function MapPage() {
                     }}
                     className={`w-full rounded-[20px] border p-4 text-left transition cursor-pointer ${
                       isSelected
-                        ? 'border-[#7A8E72] bg-[#FAF0EA] shadow-sm'
-                        : 'border-[#DCDDD5] bg-[#FAF8F5] hover:bg-white hover:border-[#B8A99A]'
+                        ? 'border-[#2563EB] bg-[#F8FAFC] shadow-sm'
+                        : 'border-[#E2E8F0] bg-[#F1F5F9] hover:bg-white hover:border-[#94A3B8]'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <p className="font-semibold text-[#28302A] text-sm leading-snug">{place.name}</p>
-                        <p className="mt-1 text-xs text-[#687067]">{place.status}</p>
+                        <p className="font-semibold text-[#0F172A] text-sm leading-snug">{place.name}</p>
+                        <p className="mt-1 text-xs text-[#64748B]">{place.status}</p>
                       </div>
-                      <span className="rounded-full bg-[#FAF0EA] border border-[#DCDDD5] px-2.5 py-0.5 text-[11px] font-bold text-[#7A8E72] whitespace-nowrap">
+                      <span className="rounded-full bg-[#F8FAFC] border border-[#E2E8F0] px-2.5 py-0.5 text-[11px] font-bold text-[#2563EB] whitespace-nowrap">
                         {place.distance}
                       </span>
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between pt-2 border-t border-[#DCDDD5] text-xs text-[#687067]">
-                      <span className="inline-flex items-center gap-1.5 font-medium text-[#7A8E72]">
+                    <div className="mt-3 flex items-center justify-between pt-2 border-t border-[#E2E8F0] text-xs text-[#64748B]">
+                      <span className="inline-flex items-center gap-1.5 font-medium text-[#2563EB]">
                         <Shield className="h-3.5 w-3.5" />
                         {place.type}
                       </span>
@@ -420,7 +420,7 @@ export default function MapPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#7A8E72] hover:bg-[#66775f] text-white text-[11px] font-semibold transition shadow-sm"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#2563EB] hover:bg-[#66775f] text-white text-[11px] font-semibold transition shadow-sm"
                         >
                           Directions <ExternalLink className="h-3 w-3" />
                         </a>
@@ -434,13 +434,13 @@ export default function MapPage() {
         </aside>
 
         {/* Right Map View */}
-        <section className="relative premium-panel-strong min-h-0 overflow-hidden p-2 rounded-[24px] border border-[#DCDDD5] bg-white shadow-sm">
+        <section className="relative premium-panel-strong min-h-0 overflow-hidden p-2 rounded-[24px] border border-[#E2E8F0] bg-white shadow-sm">
           {/* Floating Actions on Top of Map */}
           <div className="absolute top-5 right-5 z-[1000] flex items-center gap-2">
             <button
               onClick={handleRenderLiveLocation}
               disabled={isLoadingGeo}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#7A8E72] hover:bg-[#66775f] text-white text-xs font-bold shadow-lg backdrop-blur-md transition hover:scale-105 active:scale-95 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#66775f] text-white text-xs font-bold shadow-lg backdrop-blur-md transition hover:scale-105 active:scale-95 disabled:opacity-50"
               title="Render Live Location on Map"
             >
               {isLoadingGeo ? (
@@ -457,14 +457,14 @@ export default function MapPage() {
                 setRenderKey((k) => k + 1);
                 showNotification('🔄 Map re-rendered & centered');
               }}
-              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white hover:bg-[#FAF8F5] border border-[#DCDDD5] text-[#28302A] text-xs font-semibold shadow-md backdrop-blur-md transition hover:scale-105 active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white hover:bg-[#F1F5F9] border border-[#E2E8F0] text-[#0F172A] text-xs font-semibold shadow-md backdrop-blur-md transition hover:scale-105 active:scale-95"
               title="Center View"
             >
-              <RefreshCw className="h-3.5 w-3.5 text-[#7A8E72]" />
+              <RefreshCw className="h-3.5 w-3.5 text-[#2563EB]" />
             </button>
           </div>
 
-          <div className="relative h-full w-full min-h-[420px] overflow-hidden rounded-[20px] border border-[#DCDDD5]">
+          <div className="relative h-full w-full min-h-[420px] overflow-hidden rounded-[20px] border border-[#E2E8F0]">
             <CustomMapContainer
               userLocation={userLocation}
               mapCenter={mapCenter}

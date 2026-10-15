@@ -225,14 +225,14 @@ export default function ICCCDashboard() {
   if (!isAuthorized) {
     return (
       <div className="page-shell min-h-screen pt-28 pb-12 flex items-center justify-center px-4">
-        <div className="max-w-md w-full rounded-3xl border border-[#DCDDD5] bg-white p-8 shadow-2xl text-center space-y-6">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FAF0EA] text-[#7A8E72] border border-[#DCDDD5]">
+        <div className="max-w-md w-full rounded-3xl border border-[#E2E8F0] bg-white p-8 shadow-2xl text-center space-y-6">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0]">
             <Lock className="h-8 w-8" />
           </div>
 
           <div>
-            <h2 className="font-headline text-2xl font-bold text-[#28302A]">ICCC Command Room</h2>
-            <p className="text-xs text-[#687067] mt-2">
+            <h2 className="font-headline text-2xl font-bold text-[#0F172A]">ICCC Command Room</h2>
+            <p className="text-xs text-[#64748B] mt-2">
               Integrated Command & Control Center is restricted to authorized authority liaisons & control operators.
             </p>
           </div>
@@ -244,17 +244,17 @@ export default function ICCCDashboard() {
           )}
 
           <div className="space-y-4 text-left">
-            <label className="text-xs font-semibold uppercase tracking-wider text-[#28302A]">
+            <label className="text-xs font-semibold uppercase tracking-wider text-[#0F172A]">
               Enter Operator Passcode
             </label>
             <div className="relative">
-              <Key className="absolute left-4 top-3.5 h-4 w-4 text-[#687067]" />
+              <Key className="absolute left-4 top-3.5 h-4 w-4 text-[#64748B]" />
               <input
                 type="password"
                 placeholder="Passcode (e.g. COMMAND112)"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
-                className="w-full rounded-2xl border border-[#DCDDD5] bg-[#FAF8F5] pl-11 pr-4 py-3 text-sm text-[#28302A] placeholder-[#B8A99A] focus:border-[#7A8E72] focus:outline-none"
+                className="w-full rounded-2xl border border-[#E2E8F0] bg-[#F1F5F9] pl-11 pr-4 py-3 text-sm text-[#0F172A] placeholder-[#94A3B8] focus:border-[#2563EB] focus:outline-none"
               />
             </div>
 
@@ -266,8 +266,8 @@ export default function ICCCDashboard() {
             </button>
           </div>
 
-          <p className="text-[11px] text-[#687067] italic">
-            Demo passcodes: <code className="text-[#7A8E72] font-semibold">COMMAND112</code> or <code className="text-[#7A8E72] font-semibold">OPERATOR2026</code>
+          <p className="text-[11px] text-[#64748B] italic">
+            Demo passcodes: <code className="text-[#2563EB] font-semibold">COMMAND112</code> or <code className="text-[#2563EB] font-semibold">OPERATOR2026</code>
           </p>
         </div>
       </div>
@@ -278,16 +278,16 @@ export default function ICCCDashboard() {
     <div className="page-shell min-h-screen pt-28 pb-12 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
       {/* Toast Notification Banner */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#DCDDD5] bg-white px-6 py-3.5 text-sm text-[#28302A] shadow-2xl backdrop-blur-xl">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#E2E8F0] bg-white px-6 py-3.5 text-sm text-[#0F172A] shadow-2xl backdrop-blur-xl">
           <span className="inline-flex items-center gap-2 font-medium">
-            <CheckCircle2 className="h-4 w-4 text-[#4F7D55]" />
+            <CheckCircle2 className="h-4 w-4 text-[#10B981]" />
             {toastMessage}
           </span>
         </div>
       )}
 
       {/* Header Banner */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#DCDDD5]">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#E2E8F0]">
         <div>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#C62828]/15 text-[#C62828] border border-[#C62828]/30">
@@ -297,19 +297,19 @@ export default function ICCCDashboard() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#C62828]">
                 LIVE AUTHORITY CONTROL ROOM
               </p>
-              <h1 className="font-headline text-3xl font-extrabold text-[#28302A] sm:text-4xl">
+              <h1 className="font-headline text-3xl font-extrabold text-[#0F172A] sm:text-4xl">
                 ICCC Command Center
               </h1>
             </div>
           </div>
-          <p className="text-xs text-[#687067] mt-2 max-w-2xl">
+          <p className="text-xs text-[#64748B] mt-2 max-w-2xl">
             Real-time bird's-eye monitoring feed of all citizen emergency alerts, AI threat escalations, and dispatch management.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-2xl bg-[#4F7D55]/15 border border-[#4F7D55]/30 px-4 py-2 text-xs font-semibold text-[#4F7D55]">
-            <span className="h-2 w-2 rounded-full bg-[#4F7D55] animate-ping" />
+          <div className="flex items-center gap-2 rounded-2xl bg-[#10B981]/15 border border-[#10B981]/30 px-4 py-2 text-xs font-semibold text-[#10B981]">
+            <span className="h-2 w-2 rounded-full bg-[#10B981] animate-ping" />
             Live Socket Stream Connected
           </div>
         </div>
@@ -317,10 +317,10 @@ export default function ICCCDashboard() {
 
       {/* Real-time Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="card-premium bg-white border border-[#DCDDD5] shadow-sm">
+        <div className="card-premium bg-white border border-[#E2E8F0] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#687067]">Active Emergencies</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">Active Emergencies</p>
               <p className="mt-2 text-3xl font-extrabold font-mono text-[#C62828]">{activeCount}</p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#C62828]/15 text-[#C62828]">
@@ -329,22 +329,22 @@ export default function ICCCDashboard() {
           </div>
         </div>
 
-        <div className="card-premium bg-white border border-[#DCDDD5] shadow-sm">
+        <div className="card-premium bg-white border border-[#E2E8F0] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#687067]">AI Threat Auto-Escalations</p>
-              <p className="mt-2 text-3xl font-extrabold font-mono text-[#7A8E72]">{highThreatCount}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">AI Threat Auto-Escalations</p>
+              <p className="mt-2 text-3xl font-extrabold font-mono text-[#2563EB]">{highThreatCount}</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FAF0EA] text-[#7A8E72]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F8FAFC] text-[#2563EB]">
               <Shield className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="card-premium bg-white border border-[#DCDDD5] shadow-sm">
+        <div className="card-premium bg-white border border-[#E2E8F0] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#687067]">Units Responding</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">Units Responding</p>
               <p className="mt-2 text-3xl font-extrabold font-mono text-[#C18A32]">{respondingCount}</p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#C18A32]/15 text-[#C18A32]">
@@ -353,13 +353,13 @@ export default function ICCCDashboard() {
           </div>
         </div>
 
-        <div className="card-premium bg-white border border-[#DCDDD5] shadow-sm">
+        <div className="card-premium bg-white border border-[#E2E8F0] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#687067]">Avg Dispatch Time</p>
-              <p className="mt-2 text-3xl font-extrabold font-mono text-[#4F7D55]">1.8 min</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">Avg Dispatch Time</p>
+              <p className="mt-2 text-3xl font-extrabold font-mono text-[#10B981]">1.8 min</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#4F7D55]/15 text-[#4F7D55]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#10B981]/15 text-[#10B981]">
               <Clock className="h-6 w-6" />
             </div>
           </div>
@@ -369,13 +369,13 @@ export default function ICCCDashboard() {
       {/* Main Grid: Map (Fix #5 Reuse) & Incident List */}
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1.1fr]">
         {/* Reused Map Container */}
-        <div className="card-premium overflow-hidden p-0 relative min-h-[460px] bg-white border border-[#DCDDD5] shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#DCDDD5] px-6 py-4 bg-[#FAF8F5] z-10 relative">
+        <div className="card-premium overflow-hidden p-0 relative min-h-[460px] bg-white border border-[#E2E8F0] shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#E2E8F0] px-6 py-4 bg-[#F1F5F9] z-10 relative">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#687067]">Live Geo-Location Feed</p>
-              <h3 className="font-headline text-lg font-bold text-[#28302A]">Bird's-Eye Incident Map</h3>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">Live Geo-Location Feed</p>
+              <h3 className="font-headline text-lg font-bold text-[#0F172A]">Bird's-Eye Incident Map</h3>
             </div>
-            <span className="text-[11px] text-[#687067] font-mono">{pois.length} pins mapped</span>
+            <span className="text-[11px] text-[#64748B] font-mono">{pois.length} pins mapped</span>
           </div>
 
           <div className="h-[400px] relative">
@@ -388,13 +388,13 @@ export default function ICCCDashboard() {
           {/* Search & Filter Bar */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#687067]" />
+              <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#64748B]" />
               <input
                 type="text"
                 placeholder="Search user or message..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-[#DCDDD5] bg-white pl-10 pr-4 py-2.5 text-xs text-[#28302A] placeholder-[#B8A99A] focus:outline-none"
+                className="w-full rounded-2xl border border-[#E2E8F0] bg-white pl-10 pr-4 py-2.5 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:outline-none"
               />
             </div>
           </div>
@@ -407,8 +407,8 @@ export default function ICCCDashboard() {
                 onClick={() => setActiveFilter(filter)}
                 className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
                   activeFilter === filter
-                    ? 'bg-[#7A8E72] text-white shadow-sm'
-                    : 'bg-white text-[#687067] border border-[#DCDDD5] hover:bg-[#FAF0EA]'
+                    ? 'bg-[#2563EB] text-white shadow-sm'
+                    : 'bg-white text-[#64748B] border border-[#E2E8F0] hover:bg-[#F8FAFC]'
                 }`}
               >
                 {filter.replace('_', ' ')}
@@ -419,7 +419,7 @@ export default function ICCCDashboard() {
           {/* Incident Stream Cards */}
           <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-1">
             {filteredIncidents.length === 0 ? (
-              <div className="p-8 text-center rounded-2xl border border-[#DCDDD5] bg-[#FAF8F5] text-[#687067] text-xs">
+              <div className="p-8 text-center rounded-2xl border border-[#E2E8F0] bg-[#F1F5F9] text-[#64748B] text-xs">
                 No incidents match current filter.
               </div>
             ) : (
@@ -433,29 +433,29 @@ export default function ICCCDashboard() {
                       : inc.icccStatus === 'responding'
                       ? 'border-[#C18A32]/40 bg-[#C18A32]/5 hover:bg-[#C18A32]/10'
                       : inc.icccStatus === 'resolved'
-                      ? 'border-[#4F7D55]/40 bg-[#4F7D55]/5 hover:bg-[#4F7D55]/10'
-                      : 'border-[#DCDDD5] bg-white hover:bg-[#FAF8F5]'
+                      ? 'border-[#10B981]/40 bg-[#10B981]/5 hover:bg-[#10B981]/10'
+                      : 'border-[#E2E8F0] bg-white hover:bg-[#F1F5F9]'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-[#28302A] text-sm">
+                        <span className="font-bold text-[#0F172A] text-sm">
                           {inc.userId?.name || 'Citizen Emergency'}
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
                             inc.triggerSource === 'threat_detection'
-                              ? 'bg-[#FAF0EA] text-[#7A8E72] border border-[#DCDDD5]'
+                              ? 'bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0]'
                               : inc.triggerSource === 'voice_trigger'
-                              ? 'bg-[#E8C4B8]/30 text-[#28302A] border border-[#E8C4B8]'
+                              ? 'bg-[#DBEAFE]/30 text-[#0F172A] border border-[#DBEAFE]'
                               : 'bg-[#C62828]/15 text-[#C62828] border border-[#C62828]/30'
                           }`}
                         >
                           {inc.triggerSource?.replace('_', ' ')}
                         </span>
                       </div>
-                      <p className="text-xs text-[#687067] mt-1 line-clamp-1">{inc.message}</p>
+                      <p className="text-xs text-[#64748B] mt-1 line-clamp-1">{inc.message}</p>
                     </div>
 
                     <div className="text-right shrink-0">
@@ -463,21 +463,21 @@ export default function ICCCDashboard() {
                         className={`font-mono text-sm font-extrabold px-2 py-1 rounded-lg ${
                           inc.threatScore >= 75
                             ? 'bg-[#C62828]/15 text-[#C62828] border border-[#C62828]/30'
-                            : 'bg-[#FAF0EA] text-[#7A8E72]'
+                            : 'bg-[#F8FAFC] text-[#2563EB]'
                         }`}
                       >
                         {inc.threatScore || 0}%
                       </span>
-                      <p className="text-[10px] text-[#687067] font-mono mt-1">
+                      <p className="text-[10px] text-[#64748B] font-mono mt-1">
                         {new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
 
                   {/* Incident Action Buttons (1-Tap Direct Action Controls) */}
-                  <div className="pt-3 border-t border-[#DCDDD5] flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-[11px] text-[#687067]">
-                      <Phone className="h-3.5 w-3.5 text-[#7A8E72]" />
+                  <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-[11px] text-[#64748B]">
+                      <Phone className="h-3.5 w-3.5 text-[#2563EB]" />
                       <span>{inc.userId?.phone || 'No contact'}</span>
                     </div>
 
@@ -500,8 +500,8 @@ export default function ICCCDashboard() {
                         onClick={(e) => updateIncidentStatus(e, inc._id, 'resolved')}
                         className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
                           inc.icccStatus === 'resolved'
-                            ? 'bg-[#4F7D55] text-white border border-[#4F7D55]'
-                            : 'bg-[#4F7D55]/15 text-[#4F7D55] hover:bg-[#4F7D55]/25 border border-[#4F7D55]/30'
+                            ? 'bg-[#10B981] text-white border border-[#10B981]'
+                            : 'bg-[#10B981]/15 text-[#10B981] hover:bg-[#10B981]/25 border border-[#10B981]/30'
                         }`}
                       >
                         <Check className="h-3 w-3" />
@@ -514,10 +514,10 @@ export default function ICCCDashboard() {
                           e.stopPropagation();
                           setSelectedIncident(inc);
                         }}
-                        className="p-1.5 rounded-xl bg-[#FAF0EA] text-[#28302A] hover:bg-[#f3e5dc] border border-[#DCDDD5] cursor-pointer"
+                        className="p-1.5 rounded-xl bg-[#F8FAFC] text-[#0F172A] hover:bg-[#f3e5dc] border border-[#E2E8F0] cursor-pointer"
                         title="Inspect Signal Details"
                       >
-                        <Eye className="h-3.5 w-3.5 text-[#7A8E72]" />
+                        <Eye className="h-3.5 w-3.5 text-[#2563EB]" />
                       </button>
                     </div>
                   </div>
@@ -531,55 +531,55 @@ export default function ICCCDashboard() {
       {/* Inspect Incident Details Modal */}
       {selectedIncident && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
-          <div className="max-w-lg w-full rounded-3xl border border-[#DCDDD5] bg-white p-6 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-[#DCDDD5] pb-4">
+          <div className="max-w-lg w-full rounded-3xl border border-[#E2E8F0] bg-white p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
               <div>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#FAF0EA] text-[#7A8E72] border border-[#DCDDD5] text-[10px] font-bold uppercase">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0] text-[10px] font-bold uppercase">
                   Incident ID: {selectedIncident._id}
                 </span>
-                <h3 className="font-headline text-2xl font-bold text-[#28302A] mt-1">
+                <h3 className="font-headline text-2xl font-bold text-[#0F172A] mt-1">
                   {selectedIncident.userId?.name || 'Citizen Alert'}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedIncident(null)}
-                className="h-8 w-8 rounded-full bg-[#FAF0EA] flex items-center justify-center text-[#687067] hover:text-[#28302A] cursor-pointer"
+                className="h-8 w-8 rounded-full bg-[#F8FAFC] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#DCDDD5]">
-                <span className="text-[#687067] block text-[10px] uppercase tracking-wider font-semibold">Trigger Mode</span>
-                <p className="font-bold text-[#28302A] mt-1 uppercase text-sm">{selectedIncident.triggerSource}</p>
+              <div className="p-3.5 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0]">
+                <span className="text-[#64748B] block text-[10px] uppercase tracking-wider font-semibold">Trigger Mode</span>
+                <p className="font-bold text-[#0F172A] mt-1 uppercase text-sm">{selectedIncident.triggerSource}</p>
               </div>
-              <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#DCDDD5]">
-                <span className="text-[#687067] block text-[10px] uppercase tracking-wider font-semibold">Threat Risk Meter</span>
-                <p className="font-extrabold text-[#7A8E72] mt-1 font-mono text-sm">{selectedIncident.threatScore || 0}%</p>
+              <div className="p-3.5 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0]">
+                <span className="text-[#64748B] block text-[10px] uppercase tracking-wider font-semibold">Threat Risk Meter</span>
+                <p className="font-extrabold text-[#2563EB] mt-1 font-mono text-sm">{selectedIncident.threatScore || 0}%</p>
               </div>
             </div>
 
             {selectedIncident.threatDetails && (
-              <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#DCDDD5] space-y-2 text-xs">
-                <p className="font-bold text-[#28302A]">AI Signal Breakdown:</p>
-                <div className="flex justify-between text-[#687067]">
+              <div className="p-4 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0] space-y-2 text-xs">
+                <p className="font-bold text-[#0F172A]">AI Signal Breakdown:</p>
+                <div className="flex justify-between text-[#64748B]">
                   <span>Motion Accelerometer:</span>
-                  <span className="font-mono font-semibold text-[#28302A]">{selectedIncident.threatDetails.motionScore || 0}%</span>
+                  <span className="font-mono font-semibold text-[#0F172A]">{selectedIncident.threatDetails.motionScore || 0}%</span>
                 </div>
-                <div className="flex justify-between text-[#687067]">
+                <div className="flex justify-between text-[#64748B]">
                   <span>Audio Distress dB:</span>
-                  <span className="font-mono font-semibold text-[#28302A]">{selectedIncident.threatDetails.audioScore || 0}%</span>
+                  <span className="font-mono font-semibold text-[#0F172A]">{selectedIncident.threatDetails.audioScore || 0}%</span>
                 </div>
-                <div className="flex justify-between text-[#687067]">
+                <div className="flex justify-between text-[#64748B]">
                   <span>GPS Deviation:</span>
-                  <span className="font-mono font-semibold text-[#28302A]">{selectedIncident.threatDetails.gpsScore || 0}%</span>
+                  <span className="font-mono font-semibold text-[#0F172A]">{selectedIncident.threatDetails.gpsScore || 0}%</span>
                 </div>
                 {selectedIncident.threatDetails.triggerPhrase && (
-                  <div className="pt-2 border-t border-[#DCDDD5] flex justify-between text-[#687067]">
+                  <div className="pt-2 border-t border-[#E2E8F0] flex justify-between text-[#64748B]">
                     <span>Voice Trigger Phrase:</span>
-                    <span className="font-mono text-[#28302A] font-semibold">"{selectedIncident.threatDetails.triggerPhrase}"</span>
+                    <span className="font-mono text-[#0F172A] font-semibold">"{selectedIncident.threatDetails.triggerPhrase}"</span>
                   </div>
                 )}
               </div>
@@ -591,7 +591,7 @@ export default function ICCCDashboard() {
                   href={`tel:${selectedIncident.userId.phone}`}
                   className="btn-secondary text-xs flex-1 justify-center py-2.5"
                 >
-                  <Phone className="h-3.5 w-3.5 text-[#4F7D55]" /> Call {selectedIncident.userId.phone}
+                  <Phone className="h-3.5 w-3.5 text-[#10B981]" /> Call {selectedIncident.userId.phone}
                 </a>
               )}
               {selectedIncident.googleMapsLink && (
@@ -601,19 +601,19 @@ export default function ICCCDashboard() {
                   rel="noreferrer"
                   className="btn-secondary text-xs flex-1 justify-center py-2.5"
                 >
-                  <ExternalLink className="h-3.5 w-3.5 text-[#7A8E72]" /> Live GPS Map
+                  <ExternalLink className="h-3.5 w-3.5 text-[#2563EB]" /> Live GPS Map
                 </a>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-[#28302A]">Operator Response Note</label>
+              <label className="text-xs font-semibold text-[#0F172A]">Operator Response Note</label>
               <textarea
                 rows={2}
                 placeholder="Enter dispatch notes (e.g. Patrol Unit 4 dispatched)..."
                 value={operatorNote}
                 onChange={(e) => setOperatorNote(e.target.value)}
-                className="w-full rounded-2xl border border-[#DCDDD5] bg-[#FAF8F5] p-3 text-xs text-[#28302A] focus:outline-none"
+                className="w-full rounded-2xl border border-[#E2E8F0] bg-[#F1F5F9] p-3 text-xs text-[#0F172A] focus:outline-none"
               />
             </div>
 
@@ -634,8 +634,8 @@ export default function ICCCDashboard() {
                 onClick={(e) => updateIncidentStatus(e, selectedIncident._id, 'resolved')}
                 className={`py-3.5 rounded-2xl text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all ${
                   selectedIncident.icccStatus === 'resolved'
-                    ? 'bg-[#4F7D55] text-white border border-[#4F7D55] shadow-md'
-                    : 'bg-[#4F7D55]/15 text-[#4F7D55] border border-[#4F7D55]/30 hover:bg-[#4F7D55]/25'
+                    ? 'bg-[#10B981] text-white border border-[#10B981] shadow-md'
+                    : 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 hover:bg-[#10B981]/25'
                 }`}
               >
                 <Check className="h-4 w-4" /> {selectedIncident.icccStatus === 'resolved' ? 'Status: Resolved ✓' : 'Mark Resolved'}

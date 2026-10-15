@@ -1,4 +1,3 @@
-const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Subscription = require('../models/Subscription');
 const User = require('../models/User');
@@ -10,12 +9,17 @@ const PLANS = {
 
 let razorpay = null;
 if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_ID !== 'your_razorpay_key_id') {
-  razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET
-  });
+  try {
+    const Razorpay = require('razorpay');
+    razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET
+    });
+  } catch (err) {
+    console.warn('[PAYMENT] Failed to initialize Razorpay:', err.message);
+  }
 } else {
-  console.warn('[PAYMENT] Razorpay not configured. Payment features disabled.');
+  console.log('[PAYMENT] Razorpay credentials not set; running in mock/demo mode.');
 }
 
 const createOrder = async (req, res) => {
