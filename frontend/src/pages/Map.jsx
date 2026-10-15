@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Hospital, Navigation, Search, Shield, ShieldAlert, Star, Info, Loader2, ExternalLink, Compass, MapPin, RefreshCw } from 'lucide-react';
+import { Hospital, Navigation, Search, Shield, ShieldAlert, Star, Info, Loader2, ExternalLink, Compass, MapPin, RefreshCw, Play, X, Volume2, ArrowRight } from 'lucide-react';
 import CustomMapContainer from '../components/Map/MapContainer';
 import { API_BASE_URL } from '../utils/constants';
 
@@ -18,7 +18,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return d < 1 ? `${Math.round(d * 1000)} m` : `${d.toFixed(1)} km`;
 }
 
-// Generate realistic local POIs around any given coordinate
+// Generate fallback POIs around any given coordinate
 function generateLocalPOIs(lat, lon) {
   return [
     {
@@ -26,6 +26,7 @@ function generateLocalPOIs(lat, lon) {
       name: 'City Central Police Station',
       type: 'Police',
       status: 'Open 24/7 • Emergency Ready',
+      address: 'Main Administrative Zone',
       rating: 4.8,
       lat: lat + 0.0062,
       lon: lon + 0.0055,
@@ -35,6 +36,7 @@ function generateLocalPOIs(lat, lon) {
       name: 'District Trauma & Emergency Hospital',
       type: 'Hospital',
       status: '24/7 Emergency & Ambulance Active',
+      address: 'Civil Hospital Road',
       rating: 4.6,
       lat: lat - 0.0048,
       lon: lon - 0.0064,
@@ -44,6 +46,7 @@ function generateLocalPOIs(lat, lon) {
       name: 'Safe-Era Verified Women Safety Hub',
       type: 'Safe Zone',
       status: 'High Security • SOS Checkpoint',
+      address: 'Central Public Square',
       rating: 4.9,
       lat: lat + 0.0035,
       lon: lon - 0.0041,
@@ -53,6 +56,7 @@ function generateLocalPOIs(lat, lon) {
       name: 'Women & Child Protection Police Desk',
       type: 'Police',
       status: 'Special Patrol Unit on Duty',
+      address: 'Sector Safety Headquarters',
       rating: 4.9,
       lat: lat - 0.0074,
       lon: lon + 0.0071,
@@ -62,6 +66,7 @@ function generateLocalPOIs(lat, lon) {
       name: 'Apollo 24/7 Care & Emergency Center',
       type: 'Hospital',
       status: 'Open 24 Hours • Emergency Care',
+      address: 'Highway Health Corridor',
       rating: 4.5,
       lat: lat + 0.0081,
       lon: lon - 0.0028,
@@ -71,6 +76,7 @@ function generateLocalPOIs(lat, lon) {
       name: 'Central Transit Interchange - Safe Haven',
       type: 'Safe Zone',
       status: 'CCTV Monitored • Verified Safe Hub',
+      address: 'Metro & Bus Station Plaza',
       rating: 4.7,
       lat: lat - 0.0025,
       lon: lon + 0.0032,
@@ -86,18 +92,25 @@ const FILTERS = [
 ];
 
 export default function MapPage() {
-  // Default to Pune/Maharashtra coordinates (local machine region)
-  const [userLocation, setUserLocation] = useState([18.5204, 73.8567]);
-  const [mapCenter, setMapCenter] = useState([18.5204, 73.8567]);
+  const [userLocation, setUserLocation] = useState([26.9425, 80.9269]);
+  const [mapCenter, setMapCenter] = useState([26.9425, 80.9269]);
   const [pois, setPois] = useState([]);
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingGeo, setIsLoadingGeo] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [locationName, setLocationName] = useState('Pune, Maharashtra');
+  const [locationName, setLocationName] = useState('Locating nearby safe places...');
   const [selectedPlaceId, setSelectedPlaceId] = useState(null);
+  const [selectedPlace, setSelectedPlace] = useState(null);
   const [renderKey, setRenderKey] = useState(1);
+
+  // Live Turn-by-Turn Route Navigation States
+  const [routeInfo, setRouteInfo] = useState(null);
+  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
   const hasDetectedRef = useRef(false);
 
   const showNotification = (msg) => {
@@ -105,39 +118,93 @@ export default function MapPage() {
     setTimeout(() => setToastMessage(''), 4000);
   };
 
-  // Fetch POIs around coordinates
+  // Fetch Route from OSRM (Open Source Routing Machine)
+  const fetchRoute = useCallback(async (startLoc, endLoc) => {
+    if (!startLoc || !endLoc) return;
+    setIsLoadingRoute(true);
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${startLoc[1]},${startLoc[0]};${endLoc[1]},${endLoc[0]}?overview=full&geometries=geojson&steps=true`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          const coords = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+          const distKm = (route.distance / 1000).toFixed(1);
+          const durationMins = Math.max(1, Math.round(route.duration / 60));
+          const steps = (route.legs?.[0]?.steps || []).map((s, idx) => ({
+            id: idx,
+            instruction: s.name ? `Proceed along ${s.name}` : (s.maneuver?.type ? `${s.maneuver.type.toUpperCase()}` : 'Follow route path'),
+            distance: s.distance < 1000 ? `${Math.round(s.distance)} m` : `${(s.distance / 1000).toFixed(1)} km`,
+            modifier: s.maneuver?.modifier || 'straight'
+          }));
+
+          setRouteInfo({
+            coordinates: coords,
+            distanceText: `${distKm} km`,
+            durationText: `${durationMins} mins`,
+            durationMins,
+            steps: steps.length > 0 ? steps : [
+              { id: 0, instruction: 'Head towards destination along route', distance: `${distKm} km`, modifier: 'straight' }
+            ]
+          });
+          setCurrentStepIndex(0);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('OSRM routing fetch failed, fallback to direct path:', err);
+    } finally {
+      setIsLoadingRoute(false);
+    }
+
+    // Direct trajectory fallback
+    const distText = calculateDistance(startLoc[0], startLoc[1], endLoc[0], endLoc[1]);
+    const numKm = parseFloat(distText) || 1.5;
+    const estMins = Math.max(2, Math.round(numKm * 3));
+    setRouteInfo({
+      coordinates: [startLoc, endLoc],
+      distanceText: distText,
+      durationText: `${estMins} mins`,
+      durationMins: estMins,
+      steps: [
+        { id: 0, instruction: `Head towards destination (${distText})`, distance: distText, modifier: 'straight' }
+      ]
+    });
+    setCurrentStepIndex(0);
+  }, []);
+
+  // Fetch POIs around coordinates (Query real places from backend / OSM)
   const fetchNearbyPOIs = useCallback(async (lat, lon) => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken') || localStorage.getItem('authToken');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // Only call backend if we have an auth token; otherwise go straight to local fallback
-      if (token) {
-        const response = await fetch(`${API_BASE_URL}/api/map/nearby?lat=${lat}&lng=${lon}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const json = await response.json();
-          if (json.success && json.places && json.places.length > 0) {
-            const formatted = json.places.map((p, idx) => ({
-              id: p._id || `backend-${idx}`,
-              name: p.name,
-              type: p.type === 'police' ? 'Police' : p.type === 'hospital' ? 'Hospital' : 'Safe Zone',
-              distance: calculateDistance(lat, lon, p.location?.coordinates?.[1], p.location?.coordinates?.[0]),
-              status: p.verified ? 'Verified Safe Haven' : 'Open 24/7',
-              rating: p.rating || 4.7,
-              lat: p.location.coordinates[1],
-              lon: p.location.coordinates[0],
-            }));
-            setPois(formatted);
-            return;
-          }
+      const response = await fetch(`${API_BASE_URL}/api/map/nearby?lat=${lat}&lng=${lon}`, { headers });
+      if (response.ok) {
+        const json = await response.json();
+        if (json.success && json.places && json.places.length > 0) {
+          const formatted = json.places.map((p, idx) => ({
+            id: p._id || `backend-${idx}`,
+            name: p.name,
+            type: p.type === 'police' ? 'Police' : p.type === 'hospital' ? 'Hospital' : 'Safe Zone',
+            address: p.address || 'Local Emergency Center',
+            distance: p.distanceText || calculateDistance(lat, lon, p.location?.coordinates?.[1], p.location?.coordinates?.[0]),
+            status: p.openHours || (p.verified ? 'Verified 24/7 Safe Haven' : 'Open 24/7'),
+            rating: p.rating || 4.7,
+            phone: p.phone || '112',
+            lat: p.location.coordinates[1],
+            lon: p.location.coordinates[0],
+          }));
+          setPois(formatted);
+          return;
         }
       }
     } catch (e) {
-      // Fallback
+      console.warn('Backend POI fetch fallback:', e);
     }
 
-    // Default: High-accuracy relative POIs around user
+    // Fallback POIs
     const local = generateLocalPOIs(lat, lon).map((p) => ({
       ...p,
       distance: calculateDistance(lat, lon, p.lat, p.lon),
@@ -145,123 +212,151 @@ export default function MapPage() {
     setPois(local);
   }, []);
 
-  // Update location, map view, and reverse geocode
-  const applyCoordinates = useCallback((lat, lon, source = 'GPS') => {
-    setUserLocation([lat, lon]);
-    setMapCenter([lat, lon]);
-    setRenderKey((k) => k + 1);
-    setIsLoadingGeo(false);
-    setLocationName(`Live Location (${lat.toFixed(4)}, ${lon.toFixed(4)})`);
-    showNotification(`📍 Map rendered at ${source}: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
-    fetchNearbyPOIs(lat, lon);
+  // Select place and calculate route
+  const handleSelectPlace = useCallback((place) => {
+    if (!place) return;
+    setSelectedPlaceId(place.id || place._id);
+    setSelectedPlace(place);
+    setMapCenter([place.lat, place.lon]);
+    fetchRoute(userLocation, [place.lat, place.lon]);
+    showNotification(`📍 Route to ${place.name} calculated`);
+  }, [userLocation, fetchRoute]);
 
-    // Reverse geocode to get locality
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.display_name) {
-          const parts = data.display_name.split(',');
-          const shortName = parts.slice(0, 3).join(',');
-          setLocationName(shortName);
+  // Start Live Navigation (Google Maps Style)
+  const handleStartNavigation = useCallback((placeToNav) => {
+    const target = placeToNav || selectedPlace;
+    if (!target) return;
+
+    setSelectedPlaceId(target.id || target._id);
+    setSelectedPlace(target);
+    setIsNavigating(true);
+    fetchRoute(userLocation, [target.lat, target.lon]);
+
+    // Speech Audio Guidance
+    try {
+      if ('speechSynthesis' in window) {
+        const text = `Starting navigation to ${target.name}. Follow the highlighted route.`;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (e) {}
+
+    showNotification(`▶ Navigation started to ${target.name}`);
+  }, [selectedPlace, userLocation, fetchRoute]);
+
+  const handleStopNavigation = () => {
+    setIsNavigating(false);
+    showNotification('Navigation stopped');
+  };
+
+  // Reverse Geocode
+  const reverseGeocode = useCallback(async (lat, lon) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`, {
+        headers: { 'User-Agent': 'SafeSphere-WomenSafety-App' },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const city = data.address?.city || data.address?.town || data.address?.suburb || data.address?.state_district;
+        const state = data.address?.state;
+        const loc = [city, state].filter(Boolean).join(', ');
+        if (loc) {
+          setLocationName(loc);
+          return;
         }
-      })
-      .catch(() => void 0);
-  }, [fetchNearbyPOIs]);
+      }
+    } catch (e) {}
+    setLocationName(`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+  }, []);
 
-  // Primary function: Explicit user-triggered Map Rendering & Geolocation
-  const handleRenderLiveLocation = useCallback(() => {
+  // Detect Live Location
+  const detectLiveLocation = useCallback(() => {
     setIsLoadingGeo(true);
-    showNotification('🛰️ Scanning live coordinates & rendering map...');
+    showNotification('📡 Requesting precise GPS coordinates...');
 
-    // Try high-accuracy device GPS
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          hasDetectedRef.current = true;
-          applyCoordinates(pos.coords.latitude, pos.coords.longitude, 'Live Device GPS');
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const newPos = [lat, lon];
+          setUserLocation(newPos);
+          setMapCenter(newPos);
+          setIsLoadingGeo(false);
+          reverseGeocode(lat, lon);
+          fetchNearbyPOIs(lat, lon);
+          setRenderKey((prev) => prev + 1);
+          showNotification('✓ Real GPS Position Locked');
         },
-        (err) => {
-          console.warn('GPS sensor fallback:', err.message);
-          // Fallback to IP Geolocation immediately
-          fetch('https://ipwho.is/')
-            .then((res) => res.json())
-            .then((data) => {
-              if (data && data.latitude && data.longitude) {
-                applyCoordinates(data.latitude, data.longitude, `Network (${data.city || 'Local Area'})`);
-              } else {
-                applyCoordinates(18.5204, 73.8567, 'Local Map Zone');
-              }
-            })
-            .catch(() => {
-              applyCoordinates(18.5204, 73.8567, 'Local Map Zone');
-            });
+        (error) => {
+          console.warn('Geolocation error:', error.message);
+          setIsLoadingGeo(false);
+          fetchNearbyPOIs(26.9425, 80.9269);
+          setLocationName('Lucknow, Uttar Pradesh (Default)');
+          showNotification('Defaulting to Lucknow center');
         },
-        { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
       );
     } else {
-      fetch('https://ipwho.is/')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.latitude && data.longitude) {
-            applyCoordinates(data.latitude, data.longitude, `Network (${data.city || 'Local Area'})`);
-          } else {
-            applyCoordinates(18.5204, 73.8567, 'Local Map Zone');
-          }
-        })
-        .catch(() => {
-          applyCoordinates(18.5204, 73.8567, 'Local Map Zone');
-        });
+      setIsLoadingGeo(false);
+      fetchNearbyPOIs(26.9425, 80.9269);
+      setLocationName('Lucknow, Uttar Pradesh');
     }
-  }, [applyCoordinates]);
+  }, [fetchNearbyPOIs, reverseGeocode]);
 
-  // Search places using OpenStreetMap Nominatim
-  const handleSearchSubmit = async (e) => {
-    if (e) e.preventDefault();
+  useEffect(() => {
+    if (!hasDetectedRef.current) {
+      hasDetectedRef.current = true;
+      detectLiveLocation();
+    }
+  }, [detectLiveLocation]);
+
+  // Search places
+  const handleSearch = async (e) => {
+    e.preventDefault();
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
     try {
-      const endpoint = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&countrycodes=in&limit=5`;
-      const res = await fetch(endpoint);
-      const data = await res.json();
-
-      if (data && data.length > 0) {
-        const first = data[0];
-        const newLat = parseFloat(first.lat);
-        const newLon = parseFloat(first.lon);
-
-        setMapCenter([newLat, newLon]);
-        setRenderKey((k) => k + 1);
-        setLocationName(first.display_name.split(',').slice(0, 2).join(','));
-        fetchNearbyPOIs(newLat, newLon);
-        showNotification(`🔍 Moved map to: ${first.name || searchQuery}`);
-      } else {
-        showNotification(`No results found for "${searchQuery}"`);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`,
+        { headers: { 'User-Agent': 'SafeSphere-WomenSafety-App' } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lon = parseFloat(data[0].lon);
+          const newCenter = [lat, lon];
+          setMapCenter(newCenter);
+          setLocationName(data[0].display_name.split(',')[0]);
+          fetchNearbyPOIs(lat, lon);
+          setRenderKey((prev) => prev + 1);
+          showNotification(`Moved to: ${data[0].display_name.split(',')[0]}`);
+        } else {
+          showNotification('Location not found');
+        }
       }
     } catch (err) {
-      showNotification('Search request failed. Please try again.');
+      showNotification('Search failed');
     } finally {
       setIsSearching(false);
     }
   };
 
-  useEffect(() => {
-    handleRenderLiveLocation();
-  }, [handleRenderLiveLocation]);
-
   const filteredPois = useMemo(() => {
     return pois.filter((poi) => {
-      const matchesFilter = activeFilter === 'All' || poi.type.toLowerCase().includes(activeFilter.toLowerCase());
-      const matchesSearch = poi.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesFilter && matchesSearch;
+      if (activeFilter === 'All') return true;
+      return poi.type.toLowerCase().includes(activeFilter.toLowerCase());
     });
-  }, [pois, activeFilter, searchQuery]);
+  }, [pois, activeFilter]);
 
   return (
-    <div className="page-shell min-h-screen pt-20">
-      {/* Toast Notification */}
+    <div className="page-shell min-h-screen pt-28 pb-12 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+      {/* Toast Banner */}
       {toastMessage && (
-        <div className="fixed left-1/2 top-24 z-[2000] -translate-x-1/2 rounded-full border border-[#E2E8F0] bg-white px-6 py-3 text-sm text-[#0F172A] shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#E2E8F0] bg-white px-5 py-3 text-sm text-[#0F172A] shadow-2xl backdrop-blur-xl transition-all">
           <span className="inline-flex items-center gap-2 font-medium">
             <Info className="h-4 w-4 text-[#2563EB]" />
             {toastMessage}
@@ -269,216 +364,272 @@ export default function MapPage() {
         </div>
       )}
 
-      <div className="mx-auto grid h-[calc(100vh-5.5rem)] max-w-7xl gap-5 px-4 pb-4 sm:px-6 lg:grid-cols-[420px_1fr] lg:px-8">
-        {/* Left Sidebar */}
-        <aside className="premium-panel-strong flex min-h-0 flex-col overflow-hidden rounded-[24px] border border-[#E2E8F0] bg-white shadow-sm">
-          <div className="border-b border-[#E2E8F0] p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[#2563EB]">Live Safety Map</p>
-                <h1 className="mt-1 font-headline text-2xl font-bold text-[#0F172A]">Safe Places Nearby</h1>
-                <p className="mt-1 text-xs text-[#64748B] font-medium truncate max-w-[280px]" title={locationName}>
-                  📍 {locationName}
-                </p>
-              </div>
-              <button
-                onClick={handleRenderLiveLocation}
-                disabled={isLoadingGeo}
-                className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-[#2563EB] transition hover:bg-[#f3e5dc] hover:scale-105 active:scale-95 disabled:opacity-50 shadow-sm"
-                aria-label="Re-render location"
-                title="Click to Render My Current Location"
-              >
-                {isLoadingGeo ? <Loader2 className="h-5 w-5 animate-spin text-[#2563EB]" /> : <Navigation className="h-5 w-5 text-[#2563EB]" />}
-              </button>
-            </div>
+      {/* Header and Controls */}
+      <section className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between border-b border-[#E2E8F0] pb-6">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#2563EB] mb-2">
+            <Compass className="h-4 w-4 animate-spin text-[#2563EB]" style={{ animationDuration: '8s' }} />
+            <span>Real-Time Safety Grid</span>
+          </div>
+          <h1 className="font-headline text-3xl font-extrabold text-[#0F172A] sm:text-4xl">
+            Live Verified Safe Places
+          </h1>
+          <p className="mt-2 text-sm text-[#64748B] flex items-center gap-1.5 font-medium">
+            <MapPin className="h-4 w-4 text-[#2563EB]" />
+            <span>Currently showing verified shelters around: </span>
+            <span className="text-[#0F172A] font-bold">{locationName}</span>
+          </p>
+        </div>
 
-            {/* BIG PROMINENT RENDER BUTTON */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={detectLiveLocation}
+            disabled={isLoadingGeo}
+            className="btn-secondary text-xs flex items-center justify-center gap-2 shadow-sm border-[#E2E8F0] hover:border-[#2563EB] cursor-pointer"
+          >
+            <RefreshCw className={`h-4 w-4 text-[#2563EB] ${isLoadingGeo ? 'animate-spin' : ''}`} />
+            {isLoadingGeo ? 'Locking GPS...' : 'My Live Location'}
+          </button>
+
+          <form onSubmit={handleSearch} className="relative flex-1 sm:w-72">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search area or landmark..."
+              className="w-full rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] py-2.5 pl-10 pr-4 text-xs text-[#0F172A] placeholder-[#94A3B8] shadow-sm focus:border-[#2563EB] focus:outline-none"
+            />
+            <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#64748B]" />
+            {isSearching && (
+              <Loader2 className="absolute right-3.5 top-3 h-4 w-4 animate-spin text-[#2563EB]" />
+            )}
+          </form>
+        </div>
+      </section>
+
+      {/* Filter Tabs */}
+      <div className="flex flex-wrap items-center gap-2.5">
+        {FILTERS.map((filter) => {
+          const Icon = filter.icon;
+          const isActive = activeFilter === filter.label;
+          return (
             <button
-              onClick={handleRenderLiveLocation}
-              disabled={isLoadingGeo}
-              className="mt-4 w-full py-3.5 px-4 rounded-2xl bg-[#2563EB] hover:bg-[#66775f] text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-md active:scale-[0.98] transition"
+              key={filter.label}
+              onClick={() => setActiveFilter(filter.label)}
+              className={`flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-semibold transition-all shadow-sm cursor-pointer ${
+                isActive
+                  ? 'bg-[#2563EB] text-white shadow-md'
+                  : 'bg-white border border-[#E2E8F0] text-[#64748B] hover:border-[#2563EB] hover:text-[#0F172A]'
+              }`}
             >
-              {isLoadingGeo ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin text-white" />
-                  <span>Scanning & Rendering Map...</span>
-                </>
-              ) : (
-                <>
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#DBEAFE] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#DBEAFE]"></span>
-                  </span>
-                  <span>📍 Click to Render Live Location</span>
-                </>
-              )}
+              <Icon className="h-3.5 w-3.5" />
+              <span>{filter.label}</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-[#F1F5F9] text-[#64748B]'}`}>
+                {filter.label === 'All' ? pois.length : pois.filter((p) => p.type.toLowerCase().includes(filter.label.toLowerCase())).length}
+              </span>
             </button>
+          );
+        })}
+      </div>
 
-            {/* Search Form */}
-            <form onSubmit={handleSearchSubmit} className="mt-3.5 flex gap-2">
-              <div className="relative flex-1 rounded-2xl border border-[#E2E8F0] bg-[#F1F5F9] px-3 py-2.5 flex items-center">
-                <Search className="h-4 w-4 text-[#64748B] mr-2 flex-shrink-0" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search city, area, or police station..."
-                  className="w-full bg-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={isSearching}
-                className="px-4 py-2.5 rounded-2xl bg-[#2563EB] hover:bg-[#66775f] text-white text-xs font-semibold tracking-wider transition disabled:opacity-50 flex items-center justify-center shadow-sm"
-              >
-                {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
-              </button>
-            </form>
+      {/* Main Map & Navigation Layout */}
+      <div className="grid gap-6 lg:grid-cols-12">
+        {/* Left Column: Interactive Leaflet Map with HUD Overlay */}
+        <div className="lg:col-span-8 flex flex-col gap-4">
+          <div className="relative w-full h-[520px] rounded-3xl border border-[#E2E8F0] shadow-md overflow-hidden bg-[#F8FAFC]">
+            <CustomMapContainer
+              location={userLocation}
+              userLocation={userLocation}
+              mapCenter={mapCenter}
+              pois={filteredPois}
+              selectedPoiId={selectedPlaceId}
+              onSelectPoi={handleSelectPlace}
+              onStartNavigation={handleStartNavigation}
+              routeCoordinates={routeInfo?.coordinates}
+              isNavigating={isNavigating}
+              destinationPoi={selectedPlace}
+              zoom={14}
+              renderKey={renderKey}
+            />
 
-            {/* Category Filter Pills */}
-            <div className="mt-3.5 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {FILTERS.map((filter) => {
-                const Icon = filter.icon;
-                const active = activeFilter === filter.label;
-                return (
-                  <button
-                    key={filter.label}
-                    onClick={() => setActiveFilter(filter.label)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider transition whitespace-nowrap ${
-                      active
-                        ? 'bg-[#2563EB] text-white shadow-sm'
-                        : 'bg-[#F8FAFC] text-[#64748B] hover:bg-[#f3e5dc] hover:text-[#0F172A]'
-                    }`}
+            {/* Turn-by-Turn Navigation HUD (Google Maps Style) */}
+            {isNavigating && selectedPlace && (
+              <div className="absolute top-4 left-4 right-4 z-[400] rounded-2xl bg-[#0F172A]/90 backdrop-blur-xl border border-white/20 p-4 text-white shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in slide-in-from-top-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#16A34A] text-white shadow-lg animate-pulse">
+                    <Navigation className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-full bg-[#16A34A]/30 text-[#4ADE80] border border-[#16A34A]/50 text-[10px] font-bold uppercase tracking-wider">
+                        Live Navigation
+                      </span>
+                      <span className="text-xs text-white/70">
+                        {routeInfo?.distanceText || '1.2 km'} • ETA: {routeInfo?.durationText || '4 mins'}
+                      </span>
+                    </div>
+                    <h3 className="font-headline text-base font-bold text-white mt-0.5">
+                      {routeInfo?.steps?.[currentStepIndex]?.instruction || `Navigate towards ${selectedPlace.name}`}
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&origin=${userLocation[0]},${userLocation[1]}&destination=${selectedPlace.lat},${selectedPlace.lon}&travelmode=driving`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2 px-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition border border-white/15"
                   >
-                    <Icon className="h-3.5 w-3.5" />
-                    {filter.label}
+                    Open in Google Maps <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <button
+                    onClick={handleStopNavigation}
+                    className="py-2 px-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" /> Stop
                   </button>
-                );
-              })}
+                </div>
+              </div>
+            )}
+
+            {/* Quick Map Legend */}
+            <div className="absolute bottom-4 left-4 z-[400] flex items-center gap-2 rounded-2xl bg-white/90 backdrop-blur-md px-3 py-1.5 text-[11px] font-semibold text-[#0F172A] border border-[#E2E8F0] shadow-sm">
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]"></span> Police</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]"></span> Hospital</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-[#3B82F6]"></span> Safe Zone</span>
             </div>
           </div>
+        </div>
 
-          {/* POI List */}
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#64748B]">
-                {filteredPois.length} Safe Places Found
-              </p>
-              {isLoadingGeo && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2563EB]">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Locating...
-                </span>
+        {/* Right Column: Place Cards & Route Card */}
+        <div className="lg:col-span-4 space-y-4">
+          {/* Selected Place Action Card */}
+          {selectedPlace && (
+            <div className="p-5 rounded-3xl border border-[#2563EB]/40 bg-white shadow-lg space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#EFF6FF] text-[#2563EB] text-[10px] font-bold uppercase tracking-wider border border-[#BFDBFE]">
+                    {selectedPlace.type}
+                  </span>
+                  <h3 className="font-headline text-lg font-bold text-[#0F172A] mt-1.5 leading-snug">
+                    {selectedPlace.name}
+                  </h3>
+                  <p className="text-xs text-[#64748B] mt-0.5">{selectedPlace.address}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedPlace(null);
+                    setSelectedPlaceId(null);
+                    setRouteInfo(null);
+                  }}
+                  className="text-[#94A3B8] hover:text-[#0F172A] p-1 cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {routeInfo && (
+                <div className="p-3 rounded-2xl bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Driving Distance</span>
+                    <span className="font-mono font-bold text-[#1E40AF] text-sm">{routeInfo.distanceText}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#64748B] block text-[10px] uppercase font-semibold">Estimated Time</span>
+                    <span className="font-mono font-bold text-[#16A34A] text-sm">~{routeInfo.durationText}</span>
+                  </div>
+                </div>
               )}
-            </div>
 
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  onClick={() => handleStartNavigation(selectedPlace)}
+                  className="flex-1 py-3 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold uppercase tracking-wider shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Play className="h-3.5 w-3.5 fill-white" /> Start Navigation
+                </button>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&origin=${userLocation[0]},${userLocation[1]}&destination=${selectedPlace.lat},${selectedPlace.lon}&travelmode=driving`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-3 rounded-xl bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1E40AF] border border-[#BFDBFE] transition"
+                  title="Open in Google Maps App"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Place Cards List */}
+          <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
+              Verified Safe Havens Nearby ({filteredPois.length}):
+            </p>
             {filteredPois.length === 0 ? (
-              <div className="rounded-2xl border border-[#E2E8F0] bg-[#F1F5F9] p-8 text-center text-[#64748B]">
-                <Shield className="h-8 w-8 mx-auto mb-2 text-[#94A3B8]" />
-                <p className="font-semibold text-[#0F172A]">No safe places found</p>
-                <p className="text-xs text-[#64748B] mt-1">Try resetting the filter or clicking Render Live Location.</p>
+              <div className="p-6 text-center rounded-2xl border border-[#E2E8F0] bg-white text-xs text-[#64748B]">
+                No safe places found matching this filter in your immediate area.
               </div>
             ) : (
-              filteredPois.map((place) => {
-                const isSelected = selectedPlaceId === place.id;
-                const navUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lon}`;
-
+              filteredPois.map((poi) => {
+                const isSelected = selectedPlaceId === poi.id;
                 return (
                   <div
-                    key={place.id}
-                    onClick={() => {
-                      setMapCenter([place.lat, place.lon]);
-                      setSelectedPlaceId(place.id);
-                      setRenderKey((k) => k + 1);
-                    }}
-                    className={`w-full rounded-[20px] border p-4 text-left transition cursor-pointer ${
+                    key={poi.id}
+                    onClick={() => handleSelectPlace(poi)}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-sm ${
                       isSelected
-                        ? 'border-[#2563EB] bg-[#F8FAFC] shadow-sm'
-                        : 'border-[#E2E8F0] bg-[#F1F5F9] hover:bg-white hover:border-[#94A3B8]'
+                        ? 'bg-[#EFF6FF] border-[#2563EB] shadow-md ring-1 ring-[#2563EB]'
+                        : 'bg-white border-[#E2E8F0] hover:border-[#2563EB]/50'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <p className="font-semibold text-[#0F172A] text-sm leading-snug">{place.name}</p>
-                        <p className="mt-1 text-xs text-[#64748B]">{place.status}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                          poi.type.toLowerCase().includes('police')
+                            ? 'bg-[#EFF6FF] text-[#2563EB]'
+                            : poi.type.toLowerCase().includes('hospital')
+                            ? 'bg-red-50 text-red-600'
+                            : 'bg-blue-50 text-blue-600'
+                        }`}>
+                          {poi.type}
+                        </span>
+                        {poi.rating && (
+                          <span className="text-[11px] font-semibold text-[#D97706] flex items-center gap-0.5">
+                            ★ {poi.rating}
+                          </span>
+                        )}
                       </div>
-                      <span className="rounded-full bg-[#F8FAFC] border border-[#E2E8F0] px-2.5 py-0.5 text-[11px] font-bold text-[#2563EB] whitespace-nowrap">
-                        {place.distance}
+                      <span className="font-mono text-xs font-bold text-[#2563EB]">
+                        {poi.distance}
                       </span>
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between pt-2 border-t border-[#E2E8F0] text-xs text-[#64748B]">
-                      <span className="inline-flex items-center gap-1.5 font-medium text-[#2563EB]">
-                        <Shield className="h-3.5 w-3.5" />
-                        {place.type}
-                      </span>
+                    <h4 className="font-semibold text-sm text-[#0F172A] mt-2 leading-tight">
+                      {poi.name}
+                    </h4>
+                    <p className="text-xs text-[#64748B] mt-1 line-clamp-1">{poi.address || poi.status}</p>
 
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex items-center gap-1 text-[#C18A32] font-semibold">
-                          ★ {place.rating}
-                        </span>
-                        <a
-                          href={navUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#2563EB] hover:bg-[#66775f] text-white text-[11px] font-semibold transition shadow-sm"
-                        >
-                          Directions <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
+                    <div className="mt-3 pt-2.5 border-t border-[#E2E8F0] flex items-center justify-between text-xs">
+                      <span className="text-[11px] text-[#16A34A] font-semibold">{poi.status}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartNavigation(poi);
+                        }}
+                        className="text-xs font-bold text-[#2563EB] hover:text-[#1D4ED8] flex items-center gap-1 cursor-pointer"
+                      >
+                        Navigate <ArrowRight className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
                 );
               })
             )}
           </div>
-        </aside>
-
-        {/* Right Map View */}
-        <section className="relative premium-panel-strong min-h-0 overflow-hidden p-2 rounded-[24px] border border-[#E2E8F0] bg-white shadow-sm">
-          {/* Floating Actions on Top of Map */}
-          <div className="absolute top-5 right-5 z-[1000] flex items-center gap-2">
-            <button
-              onClick={handleRenderLiveLocation}
-              disabled={isLoadingGeo}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#66775f] text-white text-xs font-bold shadow-lg backdrop-blur-md transition hover:scale-105 active:scale-95 disabled:opacity-50"
-              title="Render Live Location on Map"
-            >
-              {isLoadingGeo ? (
-                <Loader2 className="h-4 w-4 animate-spin text-white" />
-              ) : (
-                <Compass className="h-4 w-4 text-white animate-spin-slow" />
-              )}
-              <span>📍 Render Live Location</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setMapCenter([...userLocation]);
-                setRenderKey((k) => k + 1);
-                showNotification('🔄 Map re-rendered & centered');
-              }}
-              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white hover:bg-[#F1F5F9] border border-[#E2E8F0] text-[#0F172A] text-xs font-semibold shadow-md backdrop-blur-md transition hover:scale-105 active:scale-95"
-              title="Center View"
-            >
-              <RefreshCw className="h-3.5 w-3.5 text-[#2563EB]" />
-            </button>
-          </div>
-
-          <div className="relative h-full w-full min-h-[420px] overflow-hidden rounded-[20px] border border-[#E2E8F0]">
-            <CustomMapContainer
-              userLocation={userLocation}
-              mapCenter={mapCenter}
-              pois={filteredPois}
-              selectedPoiId={selectedPlaceId}
-              renderKey={renderKey}
-              onSelectPoi={(poi) => {
-                setSelectedPlaceId(poi.id || poi._id);
-                setMapCenter([poi.lat, poi.lon]);
-              }}
-            />
-          </div>
-        </section>
+        </div>
       </div>
     </div>
   );

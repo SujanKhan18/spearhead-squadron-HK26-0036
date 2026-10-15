@@ -7,7 +7,7 @@ import { API_BASE_URL } from '../utils/constants';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-const getToken = () => localStorage.getItem('authToken');
+const getToken = () => localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('accessToken');
 
 const apiFetch = async (path, options = {}) => {
   const token = getToken();
@@ -265,6 +265,11 @@ function GuardianCard({ guardian, onEdit, onRemove, onVerify, showToast }) {
             <p className="text-sm text-[#64748B]">
               +91 {guardian.guardianPhone} · {guardian.relation}
             </p>
+            {guardian.guardianEmail && (
+              <p className="text-xs text-[#2563EB] font-medium mt-0.5">
+                ✉️ {guardian.guardianEmail}
+              </p>
+            )}
             <div className="flex items-center gap-2 mt-1">
               {guardian.isVerified ? (
                 <span className="inline-flex items-center gap-1 text-xs text-[#10B981] font-medium">
@@ -330,7 +335,7 @@ export default function GuardianNetworkPage() {
   const [loadingGuardians, setLoadingGuardians] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
-  const [formData, setFormData] = useState({ guardianName: '', guardianPhone: '', relation: 'Friend' });
+  const [formData, setFormData] = useState({ guardianName: '', guardianPhone: '', guardianEmail: '', relation: 'Friend' });
   const [addLoading, setAddLoading] = useState(false);
 
   const [editingGuardian, setEditingGuardian] = useState(null);
@@ -388,8 +393,8 @@ export default function GuardianNetworkPage() {
         method: 'POST',
         body: JSON.stringify({ ...formData, guardianPhone: phoneClean }),
       });
-      showToast({ message: data.message || 'Guardian added! OTP sent to their number.' });
-      setFormData({ guardianName: '', guardianPhone: '', relation: 'Friend' });
+      showToast({ message: data.message || 'Guardian added! OTP sent to their contact.' });
+      setFormData({ guardianName: '', guardianPhone: '', guardianEmail: '', relation: 'Friend' });
       fetchGuardians();
     } catch (err) {
       showToast({ type: 'error', message: err.message });
@@ -479,6 +484,16 @@ export default function GuardianNetworkPage() {
                   maxLength={10}
                   onChange={(e) => setFormData({ ...formData, guardianPhone: e.target.value.replace(/\D/g, '') })}
                   required
+                />
+              </div>
+              <div>
+                <label className="text-xs text-[#64748B] mb-1 block">Email Address (for Free Instant SOS Alerts)</label>
+                <input
+                  type="email"
+                  className="premium-input"
+                  placeholder="guardian@example.com"
+                  value={formData.guardianEmail}
+                  onChange={(e) => setFormData({ ...formData, guardianEmail: e.target.value })}
                 />
               </div>
               <div>

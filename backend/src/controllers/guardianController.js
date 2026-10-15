@@ -1,5 +1,6 @@
 const Guardian = require('../models/Guardian');
 const twilio = require('twilio');
+const { sendGuardianOtpEmail } = require('../config/email');
 
 const twilioClient = process.env.TWILIO_ACCOUNT_SID
   ? require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
@@ -29,6 +30,9 @@ const getGuardians = async (req, res) => {
     const guardiansWithOTPStatus = guardians.map(g => {
       const gObj = g.toObject();
       gObj.isOTPExpired = !!(gObj.otpExpiry && gObj.otpExpiry < now);
+      if (!twilioClient) {
+        gObj.mockOTP = g.verificationOTP;
+      }
       return gObj;
     });
 
@@ -57,7 +61,7 @@ const addGuardian = async (req, res) => {
       });
     }
 
-    const { guardianName, guardianPhone, relation } = req.body;
+    const { guardianName, guardianPhone, relation, guardianEmail } = req.body;
 
     if (!guardianName || !guardianPhone || !relation) {
       return res.status(400).json({ success: false, message: "Please provide all required fields" });
@@ -80,6 +84,7 @@ const addGuardian = async (req, res) => {
       userId: req.userId,
       guardianName,
       guardianPhone,
+      guardianEmail: guardianEmail ? guardianEmail.trim().toLowerCase() : null,
       relation,
       isVerified: false,
       verificationOTP: otp,
@@ -92,11 +97,36 @@ const addGuardian = async (req, res) => {
 
     await sendSMS(guardianPhone, smsBody);
 
+    // Send Free Email verification
+    let emailResult = null;
+    const targetEmail = guardian.guardianEmail || req.user.email;
+    if (targetEmail) {
+      emailResult = await sendGuardianOtpEmail({
+        toEmail: targetEmail,
+        guardianName,
+        userName: req.user.name,
+        otp
+      });
+    }
+
+    let successMessage = `Guardian added! (OTP: ${otp})`;
+    if (emailResult?.success) {
+      successMessage = emailResult.isLive 
+        ? `Guardian added! OTP email sent to ${targetEmail}`
+        : `Guardian added! Free email dispatched (OTP: ${otp})`;
+    }
+
     return res.status(201).json({
       success: true,
-      message: "Guardian added. OTP sent to their number for verification.",
-      guardian,
-      otpSent: true
+      message: successMessage,
+      guardian: {
+        ...guardian.toObject(),
+        mockOTP: !twilioClient ? otp : undefined
+      },
+      otpSent: true,
+      emailSent: !!emailResult?.success,
+      emailPreviewUrl: emailResult?.previewUrl,
+      mockOTP: !twilioClient ? otp : undefined
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
@@ -185,7 +215,11 @@ const resendOTP = async (req, res) => {
     const smsBody = `Hi ${guardian.guardianName}! ${req.user.name} has added you as a safety guardian on Safe-Era. Your new verification code is: ${otp}. Reply with this code to ${req.user.name} to confirm. Valid for 15 minutes.`;
     await sendSMS(guardian.guardianPhone, smsBody);
 
-    return res.status(200).json({ success: true, message: "New OTP sent to guardian's phone" });
+    return res.status(200).json({ 
+      success: true, 
+      message: !twilioClient ? `New OTP generated: ${otp}` : "New OTP sent to guardian's phone",
+      mockOTP: !twilioClient ? otp : undefined
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

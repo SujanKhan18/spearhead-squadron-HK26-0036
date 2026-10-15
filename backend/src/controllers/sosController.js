@@ -1,15 +1,12 @@
 const SosAlert = require('../models/SosAlert');
 const Guardian = require('../models/Guardian');
 const { getIO } = require('../config/socket');
-let twilioClient = null;
-if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-  try {
-    const twilio = require('twilio');
-    twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-  } catch (err) {
-    console.warn('[TWILIO] Could not initialize Twilio client:', err.message);
-  }
-}
+const twilio = require('twilio');
+const { sendSosEmergencyEmail } = require('../config/email');
+
+const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
+  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null;
 
 const sendSMSToGuardian = async (guardian, alertData) => {
   const smsBody = `EMERGENCY ALERT from Safe-Era\n\n${alertData.userName} needs immediate help!\n\nLocation: ${alertData.googleMapsLink}\n\nCall them: ${alertData.userPhone}\n\nThis alert was sent automatically by Safe-Era safety app.`;
@@ -45,61 +42,43 @@ const triggerSos = async (req, res) => {
     }
 
     const existingAlert = await SosAlert.findOne({ userId: req.userId, status: 'active' });
-    
-    // Fix #2: De-duplication guard clause
-    if (existingAlert) {
-      if (triggerSource === 'threat_detection' || threatScore) {
-        // Update existing alert with refined threat details rather than creating a duplicate
-        existingAlert.threatScore = Math.max(existingAlert.threatScore || 0, threatScore || 0);
-        if (threatDetails) {
-          existingAlert.threatDetails = {
-            ...existingAlert.threatDetails,
-            ...threatDetails
-          };
-        }
-        await existingAlert.save();
-
-        const io = getIO();
-        const payload = {
-          alertId: existingAlert._id,
-          userId: req.userId,
-          threatScore: existingAlert.threatScore,
-          threatDetails: existingAlert.threatDetails,
-          updatedAt: new Date()
-        };
-        io.to("sos_" + req.userId).emit("sos-updated", payload);
-        io.to("iccc_room").emit("iccc-incident-updated", { ...payload, alert: existingAlert });
-
-        return res.status(200).json({
-          success: true,
-          message: "Existing active SOS updated with latest threat metrics",
-          alert: existingAlert,
-          isDuplicateSuppressed: true
-        });
-      }
-
-      return res.status(409).json({
-        success: false,
-        message: "You already have an active SOS alert",
-        alert: existingAlert
-      });
-    }
-
     const googleMapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
     
-    const sosAlert = new SosAlert({
-      userId: req.userId,
-      latitude,
-      longitude,
-      message: message || (triggerSource === 'threat_detection' ? 'AUTOMATIC AI THREAT ESCALATION DETECTED' : (triggerSource === 'voice_trigger' ? 'VOICE TRIGGERED EMERGENCY SOS' : 'I need help!')),
-      googleMapsLink,
-      status: 'active',
-      triggerSource: triggerSource || 'manual_button',
-      threatScore: threatScore || (triggerSource === 'threat_detection' ? 85 : 0),
-      threatDetails: threatDetails || {}
-    });
+    let sosAlert = existingAlert;
+    let isNewAlert = false;
 
-    const guardians = await Guardian.find({ userId: req.userId });
+    if (!sosAlert) {
+      isNewAlert = true;
+      sosAlert = new SosAlert({
+        userId: req.userId,
+        latitude,
+        longitude,
+        message: message || (triggerSource === 'threat_detection' ? 'AUTOMATIC AI THREAT ESCALATION DETECTED' : (triggerSource === 'voice_trigger' ? 'VOICE TRIGGERED EMERGENCY SOS' : 'I need help!')),
+        googleMapsLink,
+        status: 'active',
+        triggerSource: triggerSource || 'manual_button',
+        threatScore: threatScore || (triggerSource === 'threat_detection' ? 85 : 0),
+        threatDetails: threatDetails || {}
+      });
+    } else {
+      // Re-trigger / update existing alert with refreshed location and threat info
+      sosAlert.latitude = latitude;
+      sosAlert.longitude = longitude;
+      sosAlert.googleMapsLink = googleMapsLink;
+      sosAlert.threatScore = Math.max(sosAlert.threatScore || 0, threatScore || (triggerSource === 'threat_detection' ? 85 : 0));
+      if (threatDetails) {
+        sosAlert.threatDetails = {
+          ...sosAlert.threatDetails,
+          ...threatDetails
+        };
+      }
+      if (message) {
+        sosAlert.message = message;
+      }
+      sosAlert.triggerSource = triggerSource || sosAlert.triggerSource;
+    }
+
+    const guardians = await Guardian.find({ userId: req.userId, isActive: true });
     
     const alertData = {
       userName: req.user.name,
@@ -126,6 +105,43 @@ const triggerSos = async (req, res) => {
       sosAlert.smsFailedCount = smsFailedCount;
     }
 
+    // Send Emergency Email directly to all active guardians with configured emails
+    let emailSentCount = 0;
+    let emailRecipients = (guardians || [])
+      .filter(g => g.guardianEmail && g.guardianEmail.trim() !== '')
+      .map(g => ({ email: g.guardianEmail.trim(), name: g.guardianName }));
+
+    // Only fallback to user's personal email if no guardian email was configured at all
+    if (emailRecipients.length === 0 && req.user.email) {
+      emailRecipients.push({ email: req.user.email, name: req.user.name + ' (User Account Fallback)' });
+    }
+
+    let emailPreviewUrl = null;
+    if (emailRecipients.length > 0) {
+      const emailResults = await Promise.allSettled(
+        emailRecipients.map(r => sendSosEmergencyEmail({
+          toEmail: r.email,
+          guardianName: r.name,
+          userName: req.user.name,
+          userPhone: req.user.phone,
+          locationLink: googleMapsLink,
+          threatScore: sosAlert.threatScore,
+          triggerSource: sosAlert.triggerSource,
+          time: new Date().toLocaleTimeString()
+        }))
+      );
+      emailResults.forEach(res => {
+        if (res.status === 'fulfilled' && res.value?.success) {
+          emailSentCount++;
+          if (res.value.previewUrl && !emailPreviewUrl) {
+            emailPreviewUrl = res.value.previewUrl;
+          }
+        }
+      });
+    }
+
+    sosAlert.emailSentCount = emailSentCount;
+    sosAlert.emailPreviewUrl = emailPreviewUrl;
     await sosAlert.save();
 
     const io = getIO();
@@ -143,20 +159,24 @@ const triggerSos = async (req, res) => {
       threatDetails: sosAlert.threatDetails,
       icccStatus: sosAlert.icccStatus,
       timestamp: sosAlert.createdAt,
-      guardiansAlerted: sosAlert.guardiansAlerted
+      guardiansAlerted: sosAlert.guardiansAlerted,
+      emailSentCount,
+      emailPreviewUrl
     };
 
     // Emit to user's guardian room AND global ICCC command room
     io.to("sos_" + req.userId).emit("sos-triggered", alertBroadcastPayload);
     io.to("iccc_room").emit("iccc-new-incident", alertBroadcastPayload);
 
-    return res.status(201).json({
+    return res.status(isNewAlert ? 201 : 200).json({
       success: true,
-      message: `SOS alert triggered via ${sosAlert.triggerSource}`,
+      message: `SOS alert ${isNewAlert ? 'triggered' : 'refreshed and broadcasted'} via ${sosAlert.triggerSource}`,
       alert: sosAlert,
       guardiansAlerted: sosAlert.guardiansAlerted,
       smsSent: smsSentCount,
-      smsFailed: smsFailedCount
+      smsFailed: smsFailedCount,
+      emailSent: emailSentCount,
+      emailPreviewUrl
     });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

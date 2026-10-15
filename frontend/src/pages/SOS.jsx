@@ -246,7 +246,8 @@ export default function SOSPage() {
       if (data.success) {
         setStage('active');
         setActiveAlertDetails(data.alert || data);
-        showToast(`🚨 SOS Dispatched! Alerted ${data.guardiansAlerted || guardiansList.length} guardians & ICCC.`);
+        const emailNote = data.emailSent ? ` (${data.emailSent} email alerts sent with live GPS)` : '';
+        showToast(`🚨 SOS Dispatched! Alerted ${data.guardiansAlerted || guardiansList.length} guardians${emailNote} & ICCC.`);
         fetchSosHistory();
       } else {
         showToast(data.message || 'Failed to dispatch SOS alert.');

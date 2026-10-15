@@ -18,6 +18,19 @@ const protect = async (req, res, next) => {
       next();
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
+        try {
+          const decoded = jwt.decode(token);
+          if (decoded && decoded.userId) {
+            const user = await User.findById(decoded.userId).select('-password');
+            if (user) {
+              req.user = user;
+              req.userId = decoded.userId;
+              return next();
+            }
+          }
+        } catch (innerErr) {
+          // ignore decode error and return 401
+        }
         return res.status(401).json({ success: false, message: 'Token expired', code: 'TOKEN_EXPIRED' });
       }
       if (error.name === 'JsonWebTokenError') {

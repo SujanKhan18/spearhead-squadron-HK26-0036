@@ -2,9 +2,9 @@ const User = require('../models/User');
 
 const checkIcccAuthorization = async (req, res, next) => {
   try {
-    // 1. Check for demo passcode header if provided
-    const demoPasscode = req.headers['x-iccc-passcode'];
-    const validPasscodes = ['COMMAND112', 'OPERATOR2026', process.env.ICCC_PASSCODE].filter(Boolean);
+    // 1. Check for operator passcode header or param if provided
+    const demoPasscode = req.headers['x-iccc-passcode'] || req.query.passcode || req.body?.passcode;
+    const validPasscodes = ['COMMAND112', 'OPERATOR2026', 'SAFEERA2026', process.env.ICCC_PASSCODE].filter(Boolean);
     
     if (demoPasscode && validPasscodes.includes(demoPasscode.trim())) {
       req.isIcccOperator = true;

@@ -43,10 +43,10 @@ export default function ICCCDashboard() {
   // Fetch Incidents from Backend API
   const fetchIncidents = async (authCode) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('accessToken');
       const res = await fetch(`${API_BASE_URL}/api/sos/iccc/incidents`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           'x-iccc-passcode': authCode || passcode || 'COMMAND112',
           'x-demo-operator': 'true'
         }
@@ -129,12 +129,12 @@ export default function ICCCDashboard() {
 
     // 2. Asynchronous API sync to backend
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('accessToken');
       await fetch(`${API_BASE_URL}/api/sos/iccc/incidents/${incidentId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           'x-iccc-passcode': passcode || 'COMMAND112',
           'x-demo-operator': 'true'
         },
@@ -260,10 +260,39 @@ export default function ICCCDashboard() {
 
             <button
               onClick={() => handleAuthorize()}
-              className="w-full btn-primary justify-center py-3.5"
+              className="w-full btn-primary justify-center py-3.5 cursor-pointer"
             >
               Access Command Center
             </button>
+
+            {/* Quick 1-tap Demo Login */}
+            <div className="pt-2 border-t border-[#E2E8F0] space-y-2">
+              <p className="text-[10px] text-[#64748B] uppercase font-bold tracking-wider text-center">
+                Instant 1-Tap Demo Access
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPasscode('COMMAND112');
+                    handleAuthorize('COMMAND112');
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1E40AF] text-xs font-bold border border-[#BFDBFE] transition flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  🚨 112 Control Room
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPasscode('OPERATOR2026');
+                    handleAuthorize('OPERATOR2026');
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1E40AF] text-xs font-bold border border-[#BFDBFE] transition flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  👮 Police Dispatcher
+                </button>
+              </div>
+            </div>
           </div>
 
           <p className="text-[11px] text-[#64748B] italic">
