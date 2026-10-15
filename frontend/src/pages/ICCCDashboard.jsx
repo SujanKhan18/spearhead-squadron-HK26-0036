@@ -123,11 +123,17 @@ export default function ICCCDashboard() {
   };
 
   // Direct 1-tap Status Update Handler with instant optimistic UI update
-  const updateIncidentStatus = async (e, incidentId, newStatus) => {
+  const updateIncidentStatus = async (e, incidentId, newStatus, customNote) => {
     if (e) {
       if (e.preventDefault) e.preventDefault();
       if (e.stopPropagation) e.stopPropagation();
     }
+
+    const noteToSave = customNote !== undefined 
+      ? customNote 
+      : (operatorNote || (newStatus === 'responding' ? 'PCR Patrol Unit 112 Dispatched to citizen coordinates' : 'Incident verified safe & closed by 112 Control Room'));
+
+    const respondedTimestamp = newStatus === 'responding' ? new Date().toISOString() : undefined;
 
     // 1. Instant optimistic UI update
     setIncidents((prev) =>
@@ -136,8 +142,9 @@ export default function ICCCDashboard() {
           ? {
               ...inc,
               icccStatus: newStatus,
+              icccRespondedAt: respondedTimestamp || inc.icccRespondedAt,
               status: newStatus === 'resolved' ? 'resolved' : inc.status,
-              icccOperatorNote: operatorNote || inc.icccOperatorNote
+              icccOperatorNote: noteToSave
             }
           : inc
       )
@@ -147,12 +154,13 @@ export default function ICCCDashboard() {
       setSelectedIncident((prev) => ({
         ...prev,
         icccStatus: newStatus,
+        icccRespondedAt: respondedTimestamp || prev.icccRespondedAt,
         status: newStatus === 'resolved' ? 'resolved' : prev.status,
-        icccOperatorNote: operatorNote || prev.icccOperatorNote
+        icccOperatorNote: noteToSave
       }));
     }
 
-    showToast(`Incident Marked as ${newStatus.toUpperCase()}`);
+    showToast(newStatus === 'responding' ? '🚨 PCR Unit Dispatched! Victim notified in real-time.' : `Incident Marked as ${newStatus.toUpperCase()}`);
 
     // 2. Asynchronous API sync to backend
     try {
@@ -165,7 +173,7 @@ export default function ICCCDashboard() {
           'x-iccc-passcode': passcode || localStorage.getItem('iccc_passcode') || 'COMMAND112',
           'x-demo-operator': 'true'
         },
-        body: JSON.stringify({ icccStatus: newStatus, note: operatorNote })
+        body: JSON.stringify({ icccStatus: newStatus, note: noteToSave })
       });
     } catch (err) {
       console.warn('API sync error (optimistic state maintained):', err);
@@ -477,24 +485,34 @@ export default function ICCCDashboard() {
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-bold text-[#0F172A] text-sm">
                             {victimName}
                           </span>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                              inc.status === 'active'
-                                ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}
-                          >
-                            {inc.status || 'Active'}
-                          </span>
+                          {inc.icccStatus === 'responding' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-blue-100 text-blue-700 border border-blue-300 flex items-center gap-1 animate-pulse">
+                              🚔 PCR Dispatched
+                            </span>
+                          ) : inc.icccStatus === 'resolved' || inc.status === 'resolved' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-green-100 text-green-700 border border-green-300">
+                              Resolved ✓
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-red-100 text-red-700 border border-red-300 animate-pulse">
+                              Active SOS
+                            </span>
+                          )}
                           <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[#2563EB] font-bold uppercase">
                             {inc.triggerSource?.replace('_', ' ') || 'SOS'}
                           </span>
                         </div>
                         <p className="text-xs text-[#64748B] mt-1 line-clamp-1">{inc.message}</p>
+                        {inc.icccOperatorNote && (
+                          <div className="text-[11px] font-medium text-blue-700 bg-blue-50 rounded-lg px-2 py-0.5 mt-1.5 border border-blue-100 flex items-center gap-1.5 inline-flex max-w-full">
+                            <Users className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{inc.icccOperatorNote}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="text-right shrink-0">
@@ -526,12 +544,12 @@ export default function ICCCDashboard() {
                           onClick={(e) => updateIncidentStatus(e, inc._id, 'responding')}
                           className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
                             inc.icccStatus === 'responding'
-                              ? 'bg-blue-600 text-white'
+                              ? 'bg-blue-600 text-white shadow-blue-500/20'
                               : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
                           }`}
                         >
                           <Users className="h-3 w-3" />
-                          {inc.icccStatus === 'responding' ? 'Responding ✓' : 'Dispatch PCR'}
+                          {inc.icccStatus === 'responding' ? 'PCR Dispatched ✓' : 'Dispatch PCR'}
                         </button>
 
                         <button
@@ -539,12 +557,12 @@ export default function ICCCDashboard() {
                           onClick={(e) => updateIncidentStatus(e, inc._id, 'resolved')}
                           className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
                             inc.icccStatus === 'resolved' || inc.status === 'resolved'
-                              ? 'bg-green-600 text-white'
+                              ? 'bg-green-600 text-white shadow-green-500/20'
                               : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                           }`}
                         >
                           <Check className="h-3 w-3" />
-                          {inc.icccStatus === 'resolved' ? 'Resolved ✓' : 'Mark Resolved'}
+                          {inc.icccStatus === 'resolved' || inc.status === 'resolved' ? 'Resolved ✓' : 'Mark Resolved'}
                         </button>
 
                         <button
@@ -552,6 +570,7 @@ export default function ICCCDashboard() {
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedIncident(inc);
+                            setOperatorNote(inc.icccOperatorNote || '');
                           }}
                           className="p-1.5 rounded-xl bg-[#F8FAFC] text-[#0F172A] hover:bg-[#EFF6FF] border border-[#E2E8F0] cursor-pointer"
                           title="Inspect Signal Details"
@@ -659,7 +678,7 @@ export default function ICCCDashboard() {
                     : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
                 }`}
               >
-                <Users className="h-4 w-4" /> {selectedIncident.icccStatus === 'responding' ? 'Status: Responding ✓' : 'Dispatch PCR'}
+                <Users className="h-4 w-4" /> {selectedIncident.icccStatus === 'responding' ? 'PCR Dispatched ✓' : 'Dispatch PCR'}
               </button>
               <button
                 type="button"
@@ -670,7 +689,7 @@ export default function ICCCDashboard() {
                     : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
                 }`}
               >
-                <Check className="h-4 w-4" /> {selectedIncident.icccStatus === 'resolved' ? 'Status: Resolved ✓' : 'Mark Resolved'}
+                <Check className="h-4 w-4" /> {selectedIncident.icccStatus === 'resolved' || selectedIncident.status === 'resolved' ? 'Resolved ✓' : 'Mark Resolved'}
               </button>
             </div>
           </div>

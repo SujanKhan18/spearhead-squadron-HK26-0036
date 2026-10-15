@@ -97,9 +97,20 @@ const initSocket = (httpServer) => {
       console.log(`User ${socket.user?.name || socket.userId} connected and joined sos_${socket.userId}`);
     }
     
+    // Explicit user room subscription
+    socket.on('join-sos-room', (userId) => {
+      if (userId) {
+        socket.join("sos_" + userId);
+        console.log(`[SOCKET] Socket ${socket.id} joined sos_${userId}`);
+      }
+    });
+
     // Guardians joining to watch a user's SOS
     socket.on('watchSOS', (watchUserId) => {
-      socket.join("sos_" + watchUserId);
+      if (watchUserId) {
+        socket.join("sos_" + watchUserId);
+        console.log(`[SOCKET] Guardian socket ${socket.id} watching sos_${watchUserId}`);
+      }
     });
 
     // ICCC Control Room Operator joining global command room

@@ -40,6 +40,21 @@ export default function SOSPage() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  const speakAlert = (text) => {
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (e) {
+      console.warn('SpeechSynthesis error:', e);
+    }
+  };
+
   // Fetch real guardians from MongoDB
   const fetchGuardians = useCallback(async () => {
     try {
@@ -139,15 +154,23 @@ export default function SOSPage() {
     checkActiveSos();
 
     const token = getAuthToken();
-    if (!token) return;
+    let storedUser = null;
+    try {
+      storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    } catch (e) {}
+    const effectiveUserId = currentUser?._id || currentUser?.id || storedUser?._id || storedUser?.id;
 
     const socket = io(API_BASE_URL || window.location.origin, {
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      auth: {
+        token: token || undefined,
+        userId: effectiveUserId
+      }
     });
     socketRef.current = socket;
 
-    if (currentUser?._id) {
-      socket.emit('join-sos-room', currentUser._id);
+    if (effectiveUserId) {
+      socket.emit('join-sos-room', effectiveUserId);
     }
 
     socket.on('sos-triggered', (payload) => {
@@ -166,6 +189,29 @@ export default function SOSPage() {
       setStage('safe');
       setActiveAlertDetails(null);
       fetchSosHistory();
+    });
+
+    // Real-time ICCC 112 Control Room dispatch listener
+    socket.on('iccc-status-updated', (payload) => {
+      console.log('🚨 [SOS] Received ICCC Status Update:', payload);
+
+      if (payload.icccStatus === 'responding') {
+        setActiveAlertDetails((prev) => ({
+          ...(prev || {}),
+          ...payload,
+          icccStatus: 'responding',
+          icccRespondedAt: payload.icccRespondedAt || new Date().toISOString(),
+          icccOperatorNote: payload.icccOperatorNote || 'PCR Patrol Unit 112 Dispatched to your coordinates'
+        }));
+        showToast('🚨 112 Control Room: PCR Patrol Unit has been dispatched to your location!');
+        speakAlert('Emergency assistance has been dispatched by 112 Control Room. A patrol unit is on the way. Please stay in a safe place.');
+      } else if (payload.icccStatus === 'resolved' || payload.status === 'resolved') {
+        setStage('safe');
+        setActiveAlertDetails(null);
+        showToast('✅ Incident marked resolved by 112 Control Room.');
+        speakAlert('Your emergency incident has been marked resolved by 112 Control Room.');
+        fetchSosHistory();
+      }
     });
 
     return () => {
@@ -338,7 +384,9 @@ export default function SOSPage() {
         <div
           className={`rounded-[28px] border px-6 py-4 text-center text-xs font-bold uppercase tracking-[0.24em] transition-all flex items-center justify-center gap-2.5 ${
             stage === 'active'
-              ? 'border-[#C62828]/40 bg-[#C62828]/15 text-[#C62828] shadow-[0_0_24px_rgba(198,40,40,0.2)] animate-pulse'
+              ? (activeAlertDetails?.icccStatus === 'responding'
+                  ? 'border-blue-500 bg-blue-600 text-white shadow-[0_0_24px_rgba(37,99,235,0.3)] animate-pulse'
+                  : 'border-[#C62828]/40 bg-[#C62828]/15 text-[#C62828] shadow-[0_0_24px_rgba(198,40,40,0.2)] animate-pulse')
               : stage === 'confirming'
               ? 'border-[#C18A32]/40 bg-[#C18A32]/15 text-[#C18A32]'
               : stage === 'safe'
@@ -348,7 +396,9 @@ export default function SOSPage() {
         >
           {stage === 'idle' && '🟢 Safe-Era Active · All Safety Channels Standing By'}
           {stage === 'confirming' && '⚠️ Preparing SOS Broadcast · Tap button again to abort'}
-          {stage === 'active' && '🚨 Live SOS Active · Guardians Alerted via Socket & SMS'}
+          {stage === 'active' && (activeAlertDetails?.icccStatus === 'responding'
+            ? '🚔 POLICE DISPATCHED · 112 PCR Patrol En Route to Your Coordinates'
+            : '🚨 Live SOS Active · Guardians Alerted via Socket, SMS & Email')}
           {stage === 'cancelled' && '⚪ SOS Alert Cancelled · All parties notified'}
           {stage === 'safe' && '✅ Marked Safe · Emergency Incident Resolved'}
         </div>
@@ -395,6 +445,59 @@ export default function SOSPage() {
             {/* Tab 1: Manual SOS Button */}
             {activeTab === 'MANUAL' && (
               <section className="premium-panel-strong p-6 md:p-8 rounded-[28px] border border-[#E2E8F0] bg-white shadow-sm">
+                {/* Real-time ICCC Police Response HUD */}
+                {stage === 'active' && activeAlertDetails?.icccStatus === 'responding' && (
+                  <div className="mb-6 w-full rounded-2xl border-2 border-blue-500 bg-blue-50/90 p-5 text-left shadow-md animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-start gap-3.5">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md">
+                        <Users className="h-5 w-5 animate-pulse" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center justify-between gap-1">
+                          <span className="rounded-full bg-blue-600 px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white">
+                            🚔 POLICE PATROL DISPATCHED · 112 CONTROL ROOM
+                          </span>
+                          <span className="text-[11px] font-mono text-blue-700 font-bold">
+                            {activeAlertDetails.icccRespondedAt ? new Date(activeAlertDetails.icccRespondedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                          </span>
+                        </div>
+                        <h4 className="mt-1.5 font-bold text-base text-[#0F172A]">
+                          Assistance is on the way! PCR Patrol Unit Dispatched
+                        </h4>
+                        <p className="mt-1 text-xs text-[#334155] leading-relaxed">
+                          {activeAlertDetails.icccOperatorNote || 'ICCC 112 Control Room has dispatched a PCR Patrol Unit to your coordinates. Operator is actively monitoring your location.'}
+                        </p>
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          <a
+                            href="tel:112"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-blue-700 shadow-sm transition"
+                          >
+                            <Phone className="h-3.5 w-3.5" /> Call 112 Control Room
+                          </a>
+                          <span className="text-xs font-semibold text-blue-700">
+                            Status: <span className="font-extrabold uppercase tracking-wide">Patrol En Route</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {stage === 'active' && activeAlertDetails?.icccStatus !== 'responding' && (
+                  <div className="mb-6 w-full rounded-2xl border border-amber-300 bg-amber-50/80 p-4 text-left flex items-center justify-between gap-3 animate-in fade-in">
+                    <div className="flex items-center gap-3">
+                      <div className="h-3 w-3 rounded-full bg-amber-500 animate-ping" />
+                      <div>
+                        <p className="text-xs font-bold text-[#0F172A]">Broadcasting live SOS to 112 Control Room &amp; Guardians</p>
+                        <p className="text-[11px] text-[#64748B]">Standing by for emergency patrol dispatch confirmation...</p>
+                      </div>
+                    </div>
+                    <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                      Dispatched
+                    </span>
+                  </div>
+                )}
+
                 <div className="mx-auto flex max-w-xl flex-col items-center text-center">
                   <div className="relative flex items-center justify-center">
                     {stage === 'active' && (

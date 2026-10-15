@@ -391,19 +391,38 @@ const updateIcccIncidentStatus = async (req, res) => {
 
     await alert.save();
 
-    const io = getIO();
+    const victimUserId = alert.userId?._id ? alert.userId._id.toString() : alert.userId.toString();
     const updatePayload = {
       alertId: alert._id,
-      userId: alert.userId?._id || alert.userId,
+      userId: victimUserId,
+      victimName: alert.userId?.name || alert.userName || 'Citizen',
       icccStatus: alert.icccStatus,
       status: alert.status,
-      icccOperatorNote: alert.icccOperatorNote,
+      icccOperatorNote: alert.icccOperatorNote || (icccStatus === 'responding' ? 'PCR Patrol Unit 112 Dispatched to live coordinates' : 'Incident resolved by Control Room 112'),
       resolvedAt: alert.resolvedAt,
-      icccRespondedAt: alert.icccRespondedAt
+      icccRespondedAt: alert.icccRespondedAt,
+      timestamp: new Date(),
+      message: icccStatus === 'responding'
+        ? (alert.icccOperatorNote || '🚨 PCR Patrol Unit 112 Dispatched to your coordinates')
+        : 'Emergency incident resolved by Control Room 112'
     };
 
     io.to("iccc_room").emit("iccc-incident-updated", { ...updatePayload, alert });
-    io.to("sos_" + (alert.userId?._id || alert.userId)).emit("iccc-status-updated", updatePayload);
+    io.to("sos_" + victimUserId).emit("iccc-status-updated", updatePayload);
+    // Broadcast for open citizen active SOS monitors
+    io.emit("iccc-status-updated", updatePayload);
+
+    if (icccStatus === 'resolved') {
+      io.to("sos_" + victimUserId).emit("user-safe", {
+        userName: alert.userId?.name || alert.userName || 'Citizen',
+        timestamp: alert.resolvedAt
+      });
+      io.emit("user-safe", {
+        alertId: alert._id,
+        userId: victimUserId,
+        timestamp: alert.resolvedAt
+      });
+    }
 
     return res.status(200).json({
       success: true,
