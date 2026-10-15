@@ -8,15 +8,29 @@ try {
 }
 
 const connectDB = async () => {
-  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/safe-era';
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+
+  if (!mongoUri) {
+    console.error('---------------------------------------------------------');
+    console.error('❌ [DB] CRITICAL: Neither MONGODB_URI nor MONGO_URI is set in environment variables!');
+    console.error('👉 Please add MONGO_URI to your Render Environment Variables.');
+    console.error('---------------------------------------------------------');
+  }
+
+  const targetUri = mongoUri || 'mongodb://127.0.0.1:27017/safe-era';
+
   try {
-    const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000
+    mongoose.set('bufferTimeoutMS', 25000);
+    const conn = await mongoose.connect(targetUri, {
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
+      retryWrites: true,
+      w: 'majority'
     });
-    console.log(`[DB] MongoDB Connected: ${conn.connection.host}`);
+    console.log(`[DB] ✅ MongoDB Connected Successfully: ${conn.connection.host}`);
   } catch (error) {
-    console.warn(`[DB] MongoDB connection warning: ${error.message}`);
-    console.warn(`[DB] Running Safe-Era backend server in fallback in-memory mode.`);
+    console.error(`[DB] ❌ MongoDB Connection Error: ${error.message}`);
+    console.error(`👉 Tip: If using MongoDB Atlas, ensure '0.0.0.0/0' (Allow access from anywhere) is enabled in Atlas Network Access.`);
   }
 };
 
