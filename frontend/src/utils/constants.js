@@ -26,8 +26,10 @@ export const ROUTES = {
     ICCC: '/iccc',
 };
 
-export const APP_NAME = 'Safe-Era';
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const envApiUrl = import.meta.env.VITE_API_BASE_URL || '';
+export const API_BASE_URL = envApiUrl
+    ? (envApiUrl.startsWith('http') ? envApiUrl : `https://${envApiUrl}`).replace(/\/$/, '')
+    : '';
 
 export const MOCK_USER = {
     name: 'Anushka Prasad',

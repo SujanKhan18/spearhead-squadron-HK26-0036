@@ -47,7 +47,7 @@ const isAllowedOrigin = (origin) => {
       return true;
     }
 
-    const allowedHostSuffixes = ['.render.com', '.vercel.app', '.netlify.app'];
+    const allowedHostSuffixes = ['.render.com', '.onrender.com', '.vercel.app', '.netlify.app'];
     return allowedHostSuffixes.some((suffix) => parsed.hostname.endsWith(suffix));
   } catch {
     return false;
