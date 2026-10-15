@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
 const http = require('http');
@@ -115,25 +116,42 @@ const sosLimiter = rateLimit({
 });
 app.use('/api/sos', sosLimiter);
 
-// ─── Health Check ────────────────────────────────
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Safe-Era API',
-    status: 'OK',
-    version: '2.0.0',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
-  });
-});
-
+// ─── Health Check & API Routes ───────────────────
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', uptime: process.uptime(), timestamp: new Date() });
 });
 
-// ─── API Routes ──────────────────────────────────
 app.use('/api', allRoutes);
 
-// ─── 404 Handler ────────────────────────────────
+// ─── Static Frontend Serving (Unified Deployment / Render) ────────
+const frontendDistPath = path.resolve(__dirname, '../../frontend/dist');
+const altFrontendDistPath = path.resolve(__dirname, '../frontend/dist');
+const resolvedDistPath = fs.existsSync(frontendDistPath)
+  ? frontendDistPath
+  : (fs.existsSync(altFrontendDistPath) ? altFrontendDistPath : null);
+
+if (resolvedDistPath) {
+  app.use(express.static(resolvedDistPath));
+
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+      return next();
+    }
+    res.sendFile(path.join(resolvedDistPath, 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({
+      message: 'Safe-Era API',
+      status: 'OK',
+      version: '2.0.0',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV
+    });
+  });
+}
+
+// ─── 404 Handler (unmatched API routes or missing static assets) ──
 app.use((req, res) => {
   res.status(404).json({
     success: false,

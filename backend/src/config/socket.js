@@ -18,7 +18,7 @@ const isAllowedOrigin = (origin) => {
   try {
     const parsed = new URL(origin);
     if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') return true;
-    return ['.render.com', '.vercel.app', '.netlify.app'].some((suffix) => parsed.hostname.endsWith(suffix));
+    return ['.render.com', '.onrender.com', '.vercel.app', '.netlify.app'].some((suffix) => parsed.hostname.endsWith(suffix));
   } catch {
     return false;
   }
