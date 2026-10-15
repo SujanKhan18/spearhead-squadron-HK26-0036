@@ -111,7 +111,8 @@ const authLimiter = rateLimit({
 // ─── SOS bypass rate limit (critical safety) ────
 const sosLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 10,
+  max: 60,
+  skip: (req) => req.path.startsWith('/iccc') || req.originalUrl?.includes('/iccc') || Boolean(req.headers['x-iccc-passcode']),
   message: { success: false, message: 'SOS request limit reached.' }
 });
 app.use('/api/sos', sosLimiter);

@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, MapPin, AlertTriangle, Clock, CheckCircle2, Phone, Filter, Search, Eye, Radio, Lock, Key, Users, ArrowUpRight, Check, ShieldAlert, ExternalLink, MessageSquare } from 'lucide-react';
+import { Shield, MapPin, AlertTriangle, Clock, CheckCircle2, Phone, Filter, Search, Eye, Radio, Lock, Key, Users, ArrowUpRight, Check, ShieldAlert, ExternalLink, MessageSquare, RefreshCw } from 'lucide-react';
 import CustomMapContainer from '../components/Map/MapContainer';
 import { API_BASE_URL } from '../utils/constants';
 import io from 'socket.io-client';
 
 export default function ICCCDashboard() {
-  // Operator Access Control State (Fix #1)
+  // Operator Access Control State
   const [passcode, setPasscode] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authError, setAuthError] = useState(null);
 
   // Incidents Data State
   const [incidents, setIncidents] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL'); // ALL, ACTIVE, HIGH_THREAT, RESPONDING, RESOLVED
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIncident, setSelectedIncident] = useState(null);
@@ -43,42 +44,60 @@ export default function ICCCDashboard() {
   // Fetch Incidents from Backend API
   const fetchIncidents = async (authCode) => {
     try {
+      setIsLoading(true);
       const token = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('accessToken');
       const res = await fetch(`${API_BASE_URL}/api/sos/iccc/incidents`, {
         headers: {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          'x-iccc-passcode': authCode || passcode || 'COMMAND112',
+          'x-iccc-passcode': authCode || passcode || localStorage.getItem('iccc_passcode') || 'COMMAND112',
           'x-demo-operator': 'true'
         }
       });
       const data = await res.json();
-      if (data.success && data.incidents && data.incidents.length > 0) {
+      if (data.success && Array.isArray(data.incidents)) {
         setIncidents(data.incidents);
-      } else {
-        setIncidents(getMockIncidents());
       }
     } catch (err) {
-      console.warn('Backend ICCC fetch error, using live mock incidents:', err);
-      setIncidents(getMockIncidents());
+      console.warn('Backend ICCC fetch error:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Setup Socket Connection for Real-Time Updates
+  // Setup Socket Connection for Real-Time Updates + 4-sec interval polling
   useEffect(() => {
     if (!isAuthorized) return;
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('accessToken');
+    const operatorCode = passcode || localStorage.getItem('iccc_passcode') || 'COMMAND112';
+
     const newSocket = io(API_BASE_URL || window.location.origin, {
-      auth: { token }
+      auth: { token, passcode: operatorCode },
+      transports: ['websocket', 'polling']
     });
 
     newSocket.on('connect', () => {
-      newSocket.emit('joinICCC', { passcode: passcode || 'COMMAND112' });
+      newSocket.emit('joinICCC', { passcode: operatorCode });
     });
 
     newSocket.on('iccc-new-incident', (newIncident) => {
-      setIncidents((prev) => [newIncident, ...prev]);
-      showToast(`NEW EMERGENCY ALERT: ${newIncident.userName || 'Citizen'} (${newIncident.triggerSource})`);
+      const formatted = {
+        ...newIncident,
+        _id: newIncident._id || newIncident.alertId,
+        userId: newIncident.userId && typeof newIncident.userId === 'object'
+          ? newIncident.userId
+          : { name: newIncident.userName, phone: newIncident.userPhone, email: newIncident.userEmail }
+      };
+
+      setIncidents((prev) => {
+        const exists = prev.some((inc) => inc._id === formatted._id);
+        if (exists) {
+          return prev.map((inc) => (inc._id === formatted._id ? { ...inc, ...formatted } : inc));
+        }
+        return [formatted, ...prev];
+      });
+
+      showToast(`🚨 NEW EMERGENCY ALERT: ${formatted.userId?.name || formatted.userName || 'Citizen'} (${formatted.triggerSource || 'SOS'})`);
     });
 
     newSocket.on('iccc-incident-updated', (updated) => {
@@ -87,12 +106,20 @@ export default function ICCCDashboard() {
       );
     });
 
-    return () => newSocket.disconnect();
+    // Auto-poll every 4 seconds as rock-solid backup
+    const pollInterval = setInterval(() => {
+      fetchIncidents(operatorCode);
+    }, 4000);
+
+    return () => {
+      clearInterval(pollInterval);
+      newSocket.disconnect();
+    };
   }, [isAuthorized, passcode]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   // Direct 1-tap Status Update Handler with instant optimistic UI update
@@ -135,7 +162,7 @@ export default function ICCCDashboard() {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          'x-iccc-passcode': passcode || 'COMMAND112',
+          'x-iccc-passcode': passcode || localStorage.getItem('iccc_passcode') || 'COMMAND112',
           'x-demo-operator': 'true'
         },
         body: JSON.stringify({ icccStatus: newStatus, note: operatorNote })
@@ -145,66 +172,28 @@ export default function ICCCDashboard() {
     }
   };
 
-  // Helper Mock Data for demoing when DB is empty
-  const getMockIncidents = () => [
-    {
-      _id: 'inc-101',
-      userId: { name: 'Anushka Sharma', phone: '+91 9876543210' },
-      latitude: 28.6139,
-      longitude: 77.2090,
-      googleMapsLink: 'https://maps.google.com/?q=28.6139,77.2090',
-      triggerSource: 'threat_detection',
-      threatScore: 88,
-      threatDetails: { motionScore: 85, audioScore: 90, gpsScore: 82 },
-      status: 'active',
-      icccStatus: 'unassigned',
-      message: 'AUTOMATIC AI THREAT ESCALATION DETECTED',
-      createdAt: new Date(Date.now() - 3 * 60 * 1000).toISOString()
-    },
-    {
-      _id: 'inc-102',
-      userId: { name: 'Priya Verma', phone: '+91 9822334455' },
-      latitude: 28.6250,
-      longitude: 77.2180,
-      googleMapsLink: 'https://maps.google.com/?q=28.6250,77.2180',
-      triggerSource: 'voice_trigger',
-      threatScore: 65,
-      threatDetails: { triggerPhrase: 'help me now' },
-      status: 'active',
-      icccStatus: 'responding',
-      message: 'VOICE TRIGGERED EMERGENCY SOS ("help me now")',
-      createdAt: new Date(Date.now() - 12 * 60 * 1000).toISOString()
-    },
-    {
-      _id: 'inc-103',
-      userId: { name: 'Sneha Patel', phone: '+91 9711223344' },
-      latitude: 28.6010,
-      longitude: 77.1950,
-      googleMapsLink: 'https://maps.google.com/?q=28.6010,77.1950',
-      triggerSource: 'manual_button',
-      threatScore: 40,
-      status: 'resolved',
-      icccStatus: 'resolved',
-      message: 'I need immediate assistance!',
-      createdAt: new Date(Date.now() - 45 * 60 * 1000).toISOString()
-    }
-  ];
+  // Map markers from real incidents
+  const mapCenter = incidents.length > 0 && incidents[0].latitude && incidents[0].longitude
+    ? [incidents[0].latitude, incidents[0].longitude]
+    : [26.9425, 80.9269];
 
-  // Map markers from incidents (Fix #5: Map Component Reuse)
-  const mapCenter = incidents.length > 0 ? [incidents[0].latitude, incidents[0].longitude] : [28.6139, 77.2090];
-  const pois = incidents.map((inc) => ({
-    id: inc._id,
-    name: `${inc.userId?.name || 'User'} (${inc.triggerSource})`,
-    lat: inc.latitude,
-    lon: inc.longitude,
-    type: inc.threatScore >= 75 ? 'hospital' : inc.icccStatus === 'responding' ? 'police' : 'other'
-  }));
+  const pois = incidents
+    .filter((inc) => inc.latitude && inc.longitude)
+    .map((inc) => ({
+      id: inc._id,
+      name: `${inc.userId?.name || inc.userName || 'Citizen'} (${inc.triggerSource || 'SOS'})`,
+      lat: inc.latitude,
+      lon: inc.longitude,
+      type: inc.status === 'active' ? 'sos' : inc.icccStatus === 'responding' ? 'police' : 'hospital'
+    }));
 
   // Filtering Logic
   const filteredIncidents = incidents.filter((inc) => {
+    const victimName = inc.userId?.name || inc.userName || '';
+    const msg = inc.message || '';
     const matchesSearch =
-      (inc.userId?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (inc.message || '').toLowerCase().includes(searchQuery.toLowerCase());
+      victimName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      msg.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
 
@@ -218,27 +207,32 @@ export default function ICCCDashboard() {
 
   // Calculate Header Summary Stats
   const activeCount = incidents.filter((i) => i.status === 'active' && i.icccStatus !== 'resolved').length;
-  const highThreatCount = incidents.filter((i) => (i.threatScore || 0) >= 75).length;
+  const highThreatCount = incidents.filter((i) => (i.threatScore || 0) >= 75 && i.status === 'active').length;
   const respondingCount = incidents.filter((i) => i.icccStatus === 'responding').length;
 
-  // Un-authorized Operator Gate Screen (Fix #1)
+  // Passcode Auth Gate
   if (!isAuthorized) {
     return (
-      <div className="page-shell min-h-screen pt-28 pb-12 flex items-center justify-center px-4">
-        <div className="max-w-md w-full rounded-3xl border border-[#E2E8F0] bg-white p-8 shadow-2xl text-center space-y-6">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0]">
+      <div className="page-shell min-h-[85vh] flex items-center justify-center px-4 py-20">
+        <div className="max-w-md w-full rounded-3xl border border-[#E2E8F0] bg-white p-8 text-center shadow-xl space-y-6">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE]">
             <Lock className="h-8 w-8" />
           </div>
 
           <div>
-            <h2 className="font-headline text-2xl font-bold text-[#0F172A]">ICCC Command Room</h2>
-            <p className="text-xs text-[#64748B] mt-2">
-              Integrated Command & Control Center is restricted to authorized authority liaisons & control operators.
+            <span className="px-3 py-1 rounded-full bg-[#EFF6FF] text-[#2563EB] text-[10px] font-bold uppercase tracking-wider border border-[#BFDBFE]">
+              Authority Access Only
+            </span>
+            <h2 className="font-headline text-3xl font-extrabold text-[#0F172A] mt-2">
+              ICCC Command Room
+            </h2>
+            <p className="text-xs text-[#64748B] mt-1">
+              Restricted dashboard for Police Control Room 112 &amp; Emergency Dispatchers.
             </p>
           </div>
 
           {authError && (
-            <div className="p-3 rounded-2xl bg-[#C62828]/10 border border-[#C62828]/30 text-[#C62828] text-xs">
+            <div className="p-3 rounded-2xl bg-[#DC2626]/10 border border-[#DC2626]/30 text-[#DC2626] text-xs">
               {authError}
             </div>
           )}
@@ -307,7 +301,7 @@ export default function ICCCDashboard() {
     <div className="page-shell min-h-screen pt-28 pb-12 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
       {/* Toast Notification Banner */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#E2E8F0] bg-white px-6 py-3.5 text-sm text-[#0F172A] shadow-2xl backdrop-blur-xl">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[#E2E8F0] bg-white px-6 py-3.5 text-sm text-[#0F172A] shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-4">
           <span className="inline-flex items-center gap-2 font-medium">
             <CheckCircle2 className="h-4 w-4 text-[#10B981]" />
             {toastMessage}
@@ -319,11 +313,11 @@ export default function ICCCDashboard() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-[#E2E8F0]">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#C62828]/15 text-[#C62828] border border-[#C62828]/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#DC2626]/15 text-[#DC2626] border border-[#DC2626]/30">
               <Radio className="h-5 w-5 animate-pulse" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#C62828]">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#DC2626]">
                 LIVE AUTHORITY CONTROL ROOM
               </p>
               <h1 className="font-headline text-3xl font-extrabold text-[#0F172A] sm:text-4xl">
@@ -337,22 +331,30 @@ export default function ICCCDashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => fetchIncidents()}
+            disabled={isLoading}
+            className="flex items-center gap-2 rounded-2xl bg-white border border-[#E2E8F0] px-4 py-2 text-xs font-semibold text-[#0F172A] hover:bg-[#F8FAFC] shadow-sm cursor-pointer"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 text-[#2563EB] ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh Feed
+          </button>
           <div className="flex items-center gap-2 rounded-2xl bg-[#10B981]/15 border border-[#10B981]/30 px-4 py-2 text-xs font-semibold text-[#10B981]">
             <span className="h-2 w-2 rounded-full bg-[#10B981] animate-ping" />
-            Live Socket Stream Connected
+            Live WebSocket Stream Active
           </div>
         </div>
       </div>
 
-      {/* Real-time Summary Cards */}
+      {/* Top Telemetry Metric Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card-premium bg-white border border-[#E2E8F0] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">Active Emergencies</p>
-              <p className="mt-2 text-3xl font-extrabold font-mono text-[#C62828]">{activeCount}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">Active Alerts</p>
+              <p className="mt-2 text-3xl font-extrabold font-mono text-[#DC2626]">{activeCount}</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#C62828]/15 text-[#C62828]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#DC2626]/15 text-[#DC2626]">
               <AlertTriangle className="h-6 w-6" />
             </div>
           </div>
@@ -361,11 +363,11 @@ export default function ICCCDashboard() {
         <div className="card-premium bg-white border border-[#E2E8F0] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">AI Threat Auto-Escalations</p>
-              <p className="mt-2 text-3xl font-extrabold font-mono text-[#2563EB]">{highThreatCount}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">High Threat Escalations</p>
+              <p className="mt-2 text-3xl font-extrabold font-mono text-[#D97706]">{highThreatCount}</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F8FAFC] text-[#2563EB]">
-              <Shield className="h-6 w-6" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#D97706]/15 text-[#D97706]">
+              <ShieldAlert className="h-6 w-6" />
             </div>
           </div>
         </div>
@@ -373,10 +375,10 @@ export default function ICCCDashboard() {
         <div className="card-premium bg-white border border-[#E2E8F0] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">Units Responding</p>
-              <p className="mt-2 text-3xl font-extrabold font-mono text-[#C18A32]">{respondingCount}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">PCR Units Dispatched</p>
+              <p className="mt-2 text-3xl font-extrabold font-mono text-[#2563EB]">{respondingCount}</p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#C18A32]/15 text-[#C18A32]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2563EB]/15 text-[#2563EB]">
               <Users className="h-6 w-6" />
             </div>
           </div>
@@ -385,8 +387,8 @@ export default function ICCCDashboard() {
         <div className="card-premium bg-white border border-[#E2E8F0] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">Avg Dispatch Time</p>
-              <p className="mt-2 text-3xl font-extrabold font-mono text-[#10B981]">1.8 min</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">Total Incidents Logged</p>
+              <p className="mt-2 text-3xl font-extrabold font-mono text-[#10B981]">{incidents.length}</p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#10B981]/15 text-[#10B981]">
               <Clock className="h-6 w-6" />
@@ -395,16 +397,16 @@ export default function ICCCDashboard() {
         </div>
       </div>
 
-      {/* Main Grid: Map (Fix #5 Reuse) & Incident List */}
+      {/* Main Grid: Map & Incident List */}
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1.1fr]">
         {/* Reused Map Container */}
-        <div className="card-premium overflow-hidden p-0 relative min-h-[460px] bg-white border border-[#E2E8F0] shadow-sm">
+        <div className="card-premium overflow-hidden p-0 relative min-h-[460px] bg-white border border-[#E2E8F0] shadow-sm rounded-3xl">
           <div className="flex items-center justify-between border-b border-[#E2E8F0] px-6 py-4 bg-[#F1F5F9] z-10 relative">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">Live Geo-Location Feed</p>
               <h3 className="font-headline text-lg font-bold text-[#0F172A]">Bird's-Eye Incident Map</h3>
             </div>
-            <span className="text-[11px] text-[#64748B] font-mono">{pois.length} pins mapped</span>
+            <span className="text-[11px] text-[#64748B] font-mono">{pois.length} incidents mapped</span>
           </div>
 
           <div className="h-[400px] relative">
@@ -420,10 +422,10 @@ export default function ICCCDashboard() {
               <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#64748B]" />
               <input
                 type="text"
-                placeholder="Search user or message..."
+                placeholder="Search citizen name or message..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-2xl border border-[#E2E8F0] bg-white pl-10 pr-4 py-2.5 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:outline-none"
+                className="w-full rounded-2xl border border-[#E2E8F0] bg-white pl-10 pr-4 py-2.5 text-xs text-[#0F172A] placeholder-[#94A3B8] focus:outline-none shadow-sm"
               />
             </div>
           </div>
@@ -434,7 +436,7 @@ export default function ICCCDashboard() {
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   activeFilter === filter
                     ? 'bg-[#2563EB] text-white shadow-sm'
                     : 'bg-white text-[#64748B] border border-[#E2E8F0] hover:bg-[#F8FAFC]'
@@ -446,112 +448,121 @@ export default function ICCCDashboard() {
           </div>
 
           {/* Incident Stream Cards */}
-          <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-1">
+          <div className="space-y-3.5 max-h-[460px] overflow-y-auto pr-1">
             {filteredIncidents.length === 0 ? (
-              <div className="p-8 text-center rounded-2xl border border-[#E2E8F0] bg-[#F1F5F9] text-[#64748B] text-xs">
-                No incidents match current filter.
+              <div className="p-12 text-center rounded-3xl border border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] text-xs space-y-2">
+                <CheckCircle2 className="h-8 w-8 text-[#10B981] mx-auto opacity-60" />
+                <p className="font-semibold text-sm text-[#0F172A]">All Clear — No Incidents in Current Filter</p>
+                <p className="text-[11px]">When a citizen presses SOS or triggers threat detection, their alert will appear here in real-time.</p>
               </div>
             ) : (
-              filteredIncidents.map((inc) => (
-                <div
-                  key={inc._id}
-                  onClick={() => setSelectedIncident(inc)}
-                  className={`p-5 rounded-2xl border transition-all cursor-pointer space-y-3 ${
-                    inc.threatScore >= 75
-                      ? 'border-[#C62828]/40 bg-[#C62828]/5 hover:bg-[#C62828]/10'
-                      : inc.icccStatus === 'responding'
-                      ? 'border-[#C18A32]/40 bg-[#C18A32]/5 hover:bg-[#C18A32]/10'
-                      : inc.icccStatus === 'resolved'
-                      ? 'border-[#10B981]/40 bg-[#10B981]/5 hover:bg-[#10B981]/10'
-                      : 'border-[#E2E8F0] bg-white hover:bg-[#F1F5F9]'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-[#0F172A] text-sm">
-                          {inc.userId?.name || 'Citizen Emergency'}
-                        </span>
+              filteredIncidents.map((inc) => {
+                const victimName = inc.userId?.name || inc.userName || 'Citizen Emergency';
+                const victimPhone = inc.userId?.phone || inc.userPhone || 'No contact';
+                const isHighThreat = (inc.threatScore || 0) >= 75;
+
+                return (
+                  <div
+                    key={inc._id}
+                    onClick={() => setSelectedIncident(inc)}
+                    className={`p-5 rounded-2xl border transition-all cursor-pointer space-y-3 shadow-sm ${
+                      inc.status === 'active' && isHighThreat
+                        ? 'border-[#DC2626]/50 bg-red-50/50 hover:bg-red-50'
+                        : inc.status === 'active'
+                        ? 'border-amber-300 bg-amber-50/40 hover:bg-amber-50/70'
+                        : inc.icccStatus === 'responding'
+                        ? 'border-blue-300 bg-blue-50/40 hover:bg-blue-50/70'
+                        : 'border-[#E2E8F0] bg-white hover:bg-[#F8FAFC]'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-[#0F172A] text-sm">
+                            {victimName}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
+                              inc.status === 'active'
+                                ? 'bg-red-100 text-red-700 border border-red-300 animate-pulse'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {inc.status || 'Active'}
+                          </span>
+                          <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[#2563EB] font-bold uppercase">
+                            {inc.triggerSource?.replace('_', ' ') || 'SOS'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#64748B] mt-1 line-clamp-1">{inc.message}</p>
+                      </div>
+
+                      <div className="text-right shrink-0">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${
-                            inc.triggerSource === 'threat_detection'
-                              ? 'bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0]'
-                              : inc.triggerSource === 'voice_trigger'
-                              ? 'bg-[#DBEAFE]/30 text-[#0F172A] border border-[#DBEAFE]'
-                              : 'bg-[#C62828]/15 text-[#C62828] border border-[#C62828]/30'
+                          className={`font-mono text-sm font-extrabold px-2 py-1 rounded-lg ${
+                            isHighThreat
+                              ? 'bg-red-100 text-red-700 border border-red-300'
+                              : 'bg-[#EFF6FF] text-[#2563EB]'
                           }`}
                         >
-                          {inc.triggerSource?.replace('_', ' ')}
+                          {inc.threatScore || 0}%
                         </span>
+                        <p className="text-[10px] text-[#64748B] font-mono mt-1">
+                          {inc.createdAt ? new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                        </p>
                       </div>
-                      <p className="text-xs text-[#64748B] mt-1 line-clamp-1">{inc.message}</p>
                     </div>
 
-                    <div className="text-right shrink-0">
-                      <span
-                        className={`font-mono text-sm font-extrabold px-2 py-1 rounded-lg ${
-                          inc.threatScore >= 75
-                            ? 'bg-[#C62828]/15 text-[#C62828] border border-[#C62828]/30'
-                            : 'bg-[#F8FAFC] text-[#2563EB]'
-                        }`}
-                      >
-                        {inc.threatScore || 0}%
-                      </span>
-                      <p className="text-[10px] text-[#64748B] font-mono mt-1">
-                        {new Date(inc.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
+                    {/* Incident Action Buttons */}
+                    <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-[11px] text-[#64748B]">
+                        <Phone className="h-3.5 w-3.5 text-[#2563EB]" />
+                        <span>{victimPhone}</span>
+                      </div>
 
-                  {/* Incident Action Buttons (1-Tap Direct Action Controls) */}
-                  <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-[11px] text-[#64748B]">
-                      <Phone className="h-3.5 w-3.5 text-[#2563EB]" />
-                      <span>{inc.userId?.phone || 'No contact'}</span>
-                    </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => updateIncidentStatus(e, inc._id, 'responding')}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                            inc.icccStatus === 'responding'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                          }`}
+                        >
+                          <Users className="h-3 w-3" />
+                          {inc.icccStatus === 'responding' ? 'Responding ✓' : 'Dispatch PCR'}
+                        </button>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => updateIncidentStatus(e, inc._id, 'responding')}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
-                          inc.icccStatus === 'responding'
-                            ? 'bg-[#C18A32] text-white border border-[#C18A32]'
-                            : 'bg-[#C18A32]/15 text-[#C18A32] hover:bg-[#C18A32]/25 border border-[#C18A32]/30'
-                        }`}
-                      >
-                        <Users className="h-3 w-3" />
-                        {inc.icccStatus === 'responding' ? 'Responding ✓' : 'Mark Responding'}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={(e) => updateIncidentStatus(e, inc._id, 'resolved')}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                            inc.icccStatus === 'resolved' || inc.status === 'resolved'
+                              ? 'bg-green-600 text-white'
+                              : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                          }`}
+                        >
+                          <Check className="h-3 w-3" />
+                          {inc.icccStatus === 'resolved' ? 'Resolved ✓' : 'Mark Resolved'}
+                        </button>
 
-                      <button
-                        type="button"
-                        onClick={(e) => updateIncidentStatus(e, inc._id, 'resolved')}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
-                          inc.icccStatus === 'resolved'
-                            ? 'bg-[#10B981] text-white border border-[#10B981]'
-                            : 'bg-[#10B981]/15 text-[#10B981] hover:bg-[#10B981]/25 border border-[#10B981]/30'
-                        }`}
-                      >
-                        <Check className="h-3 w-3" />
-                        {inc.icccStatus === 'resolved' ? 'Resolved ✓' : 'Mark Resolved'}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedIncident(inc);
-                        }}
-                        className="p-1.5 rounded-xl bg-[#F8FAFC] text-[#0F172A] hover:bg-[#f3e5dc] border border-[#E2E8F0] cursor-pointer"
-                        title="Inspect Signal Details"
-                      >
-                        <Eye className="h-3.5 w-3.5 text-[#2563EB]" />
-                      </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedIncident(inc);
+                          }}
+                          className="p-1.5 rounded-xl bg-[#F8FAFC] text-[#0F172A] hover:bg-[#EFF6FF] border border-[#E2E8F0] cursor-pointer"
+                          title="Inspect Signal Details"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-[#2563EB]" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -559,73 +570,65 @@ export default function ICCCDashboard() {
 
       {/* Inspect Incident Details Modal */}
       {selectedIncident && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md">
           <div className="max-w-lg w-full rounded-3xl border border-[#E2E8F0] bg-white p-6 shadow-2xl space-y-6">
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
               <div>
-                <span className="px-2.5 py-0.5 rounded-full bg-[#F8FAFC] text-[#2563EB] border border-[#E2E8F0] text-[10px] font-bold uppercase">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] text-[10px] font-bold uppercase">
                   Incident ID: {selectedIncident._id}
                 </span>
                 <h3 className="font-headline text-2xl font-bold text-[#0F172A] mt-1">
-                  {selectedIncident.userId?.name || 'Citizen Alert'}
+                  {selectedIncident.userId?.name || selectedIncident.userName || 'Citizen Emergency Alert'}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedIncident(null)}
-                className="h-8 w-8 rounded-full bg-[#F8FAFC] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] cursor-pointer"
+                className="h-8 w-8 rounded-full bg-[#F1F5F9] flex items-center justify-center text-[#64748B] hover:text-[#0F172A] cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0]">
+              <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">
                 <span className="text-[#64748B] block text-[10px] uppercase tracking-wider font-semibold">Trigger Mode</span>
-                <p className="font-bold text-[#0F172A] mt-1 uppercase text-sm">{selectedIncident.triggerSource}</p>
+                <p className="font-bold text-[#0F172A] mt-1 uppercase text-sm">{selectedIncident.triggerSource || 'SOS Button'}</p>
               </div>
-              <div className="p-3.5 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0]">
+              <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0]">
                 <span className="text-[#64748B] block text-[10px] uppercase tracking-wider font-semibold">Threat Risk Meter</span>
                 <p className="font-extrabold text-[#2563EB] mt-1 font-mono text-sm">{selectedIncident.threatScore || 0}%</p>
               </div>
             </div>
 
-            {selectedIncident.threatDetails && (
-              <div className="p-4 rounded-2xl bg-[#F1F5F9] border border-[#E2E8F0] space-y-2 text-xs">
-                <p className="font-bold text-[#0F172A]">AI Signal Breakdown:</p>
-                <div className="flex justify-between text-[#64748B]">
-                  <span>Motion Accelerometer:</span>
-                  <span className="font-mono font-semibold text-[#0F172A]">{selectedIncident.threatDetails.motionScore || 0}%</span>
-                </div>
-                <div className="flex justify-between text-[#64748B]">
-                  <span>Audio Distress dB:</span>
-                  <span className="font-mono font-semibold text-[#0F172A]">{selectedIncident.threatDetails.audioScore || 0}%</span>
-                </div>
-                <div className="flex justify-between text-[#64748B]">
-                  <span>GPS Deviation:</span>
-                  <span className="font-mono font-semibold text-[#0F172A]">{selectedIncident.threatDetails.gpsScore || 0}%</span>
-                </div>
-                {selectedIncident.threatDetails.triggerPhrase && (
-                  <div className="pt-2 border-t border-[#E2E8F0] flex justify-between text-[#64748B]">
-                    <span>Voice Trigger Phrase:</span>
-                    <span className="font-mono text-[#0F172A] font-semibold">"{selectedIncident.threatDetails.triggerPhrase}"</span>
-                  </div>
-                )}
+            <div className="p-4 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] space-y-2 text-xs">
+              <p className="font-bold text-[#0F172A]">Incident Information:</p>
+              <div className="flex justify-between text-[#64748B]">
+                <span>Status:</span>
+                <span className="font-mono font-bold text-[#0F172A] uppercase">{selectedIncident.status || 'Active'}</span>
               </div>
-            )}
+              <div className="flex justify-between text-[#64748B]">
+                <span>GPS Coordinates:</span>
+                <span className="font-mono font-semibold text-[#0F172A]">{selectedIncident.latitude}, {selectedIncident.longitude}</span>
+              </div>
+              <div className="flex justify-between text-[#64748B]">
+                <span>Logged At:</span>
+                <span className="font-mono text-[#0F172A]">{selectedIncident.createdAt ? new Date(selectedIncident.createdAt).toLocaleString() : 'Recent'}</span>
+              </div>
+            </div>
 
-            <div className="flex items-center gap-3">
-              {selectedIncident.userId?.phone && (
+            <div className="flex gap-2">
+              {(selectedIncident.userId?.phone || selectedIncident.userPhone) && (
                 <a
-                  href={`tel:${selectedIncident.userId.phone}`}
+                  href={`tel:${selectedIncident.userId?.phone || selectedIncident.userPhone}`}
                   className="btn-secondary text-xs flex-1 justify-center py-2.5"
                 >
-                  <Phone className="h-3.5 w-3.5 text-[#10B981]" /> Call {selectedIncident.userId.phone}
+                  <Phone className="h-3.5 w-3.5 text-[#10B981]" /> Call {selectedIncident.userId?.phone || selectedIncident.userPhone}
                 </a>
               )}
-              {selectedIncident.googleMapsLink && (
+              {selectedIncident.latitude && selectedIncident.longitude && (
                 <a
-                  href={selectedIncident.googleMapsLink}
+                  href={`https://maps.google.com/?q=${selectedIncident.latitude},${selectedIncident.longitude}`}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-secondary text-xs flex-1 justify-center py-2.5"
@@ -639,10 +642,10 @@ export default function ICCCDashboard() {
               <label className="text-xs font-semibold text-[#0F172A]">Operator Response Note</label>
               <textarea
                 rows={2}
-                placeholder="Enter dispatch notes (e.g. Patrol Unit 4 dispatched)..."
+                placeholder="Enter dispatch notes (e.g. PCR Unit 4 dispatched to location)..."
                 value={operatorNote}
                 onChange={(e) => setOperatorNote(e.target.value)}
-                className="w-full rounded-2xl border border-[#E2E8F0] bg-[#F1F5F9] p-3 text-xs text-[#0F172A] focus:outline-none"
+                className="w-full rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-xs text-[#0F172A] focus:outline-none"
               />
             </div>
 
@@ -652,19 +655,19 @@ export default function ICCCDashboard() {
                 onClick={(e) => updateIncidentStatus(e, selectedIncident._id, 'responding')}
                 className={`py-3.5 rounded-2xl text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all ${
                   selectedIncident.icccStatus === 'responding'
-                    ? 'bg-[#C18A32] text-white border border-[#C18A32] shadow-md'
-                    : 'bg-[#C18A32]/15 text-[#C18A32] border border-[#C18A32]/30 hover:bg-[#C18A32]/25'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
                 }`}
               >
-                <Users className="h-4 w-4" /> {selectedIncident.icccStatus === 'responding' ? 'Status: Responding ✓' : 'Mark Responding'}
+                <Users className="h-4 w-4" /> {selectedIncident.icccStatus === 'responding' ? 'Status: Responding ✓' : 'Dispatch PCR'}
               </button>
               <button
                 type="button"
                 onClick={(e) => updateIncidentStatus(e, selectedIncident._id, 'resolved')}
                 className={`py-3.5 rounded-2xl text-xs font-extrabold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all ${
-                  selectedIncident.icccStatus === 'resolved'
-                    ? 'bg-[#10B981] text-white border border-[#10B981] shadow-md'
-                    : 'bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/30 hover:bg-[#10B981]/25'
+                  selectedIncident.icccStatus === 'resolved' || selectedIncident.status === 'resolved'
+                    ? 'bg-green-600 text-white shadow-md'
+                    : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
                 }`}
               >
                 <Check className="h-4 w-4" /> {selectedIncident.icccStatus === 'resolved' ? 'Status: Resolved ✓' : 'Mark Resolved'}

@@ -144,10 +144,15 @@ const triggerSos = async (req, res) => {
     sosAlert.emailPreviewUrl = emailPreviewUrl;
     await sosAlert.save();
 
-    const io = getIO();
     const alertBroadcastPayload = {
       alertId: sosAlert._id,
-      userId: req.userId,
+      _id: sosAlert._id,
+      userId: {
+        _id: req.userId,
+        name: req.user.name,
+        phone: req.user.phone,
+        email: req.user.email
+      },
       userName: req.user.name,
       userPhone: req.user.phone,
       latitude,
@@ -157,7 +162,9 @@ const triggerSos = async (req, res) => {
       triggerSource: sosAlert.triggerSource,
       threatScore: sosAlert.threatScore,
       threatDetails: sosAlert.threatDetails,
+      status: sosAlert.status,
       icccStatus: sosAlert.icccStatus,
+      createdAt: sosAlert.createdAt,
       timestamp: sosAlert.createdAt,
       guardiansAlerted: sosAlert.guardiansAlerted,
       emailSentCount,
