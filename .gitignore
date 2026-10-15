@@ -29,3 +29,5 @@ Thumbs.db
 .git_akash/
 start-all.bat
 push_member1.ps1
+.vite/
+*/.vite/
